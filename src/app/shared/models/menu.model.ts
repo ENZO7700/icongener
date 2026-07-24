@@ -3,14 +3,30 @@ export interface MenuItem {
   label: string;
   icon: string;
   route: string;
+  category: string;
   translationKey?: string;
+  title: {
+    en: string;
+    sk: string;
+  };
+  children?: MenuItem[];
+  badge?: string;
+  disabled?: boolean;
+  external?: boolean;
 }
 
 export interface MenuCategory {
   id: string;
   label: string;
+  icon: string;
   translationKey?: string;
+  title: {
+    en: string;
+    sk: string;
+  };
   items: MenuItem[];
+  expanded?: boolean;
+  visible?: boolean;
 }
 
 // Menu items for the sidebar
@@ -18,13 +34,17 @@ export const MENU_ITEMS: MenuCategory[] = [
   {
     id: 'main',
     label: 'Main',
+    title: { en: 'Main', sk: 'Hlavné' },
+    icon: 'dashboard',
     translationKey: 'menuMain',
     items: [
       {
         id: 'dashboard',
         label: 'Dashboard',
+        title: { en: 'Dashboard', sk: 'Nástroje' },
         icon: 'dashboard',
-        route: '/dashboard',
+        route: '/',
+        category: 'main',
         translationKey: 'menuDashboard'
       }
     ]
@@ -32,62 +52,71 @@ export const MENU_ITEMS: MenuCategory[] = [
   {
     id: 'generators',
     label: 'Generators',
+    title: { en: 'Generators', sk: 'Generátory' },
+    icon: 'icon',
     translationKey: 'menuGenerators',
     items: [
       {
         id: 'icon-generator',
         label: 'Icon Generator',
+        title: { en: 'Icon Generator', sk: 'Generátor ikon' },
         icon: 'icon',
-        route: '/icons',
+        route: '/icon-generator',
+        category: 'generators',
         translationKey: 'menuIconGenerator'
       },
       {
         id: 'favicon-generator',
         label: 'Favicon Generator',
+        title: { en: 'Favicon Generator', sk: 'Generátor faviconov' },
         icon: 'favicon',
-        route: '/favicons',
+        route: '/favicon-generator',
+        category: 'generators',
         translationKey: 'menuFaviconGenerator'
       },
       {
         id: 'banner-generator',
         label: 'Banner Generator',
+        title: { en: 'Banner Generator', sk: 'Generátor bannerov' },
         icon: 'banner',
-        route: '/banners',
+        route: '/banner-generator',
+        category: 'generators',
         translationKey: 'menuBannerGenerator'
-      },
+      }
+    ]
+  },
+  {
+    id: 'tools',
+    label: 'Tools',
+    title: { en: 'Tools', sk: 'Nástroje' },
+    icon: 'convert',
+    translationKey: 'menuTools',
+    items: [
       {
         id: 'png-to-html',
         label: 'PNG to HTML',
+        title: { en: 'PNG to HTML', sk: 'PNG na HTML' },
         icon: 'convert',
         route: '/png-to-html',
+        category: 'tools',
         translationKey: 'menuPngToHtml'
-      }
-    ]
-  },
-  {
-    id: 'history',
-    label: 'History',
-    translationKey: 'menuHistory',
-    items: [
+      },
       {
         id: 'history',
-        label: 'Generation History',
+        label: 'History',
+        title: { en: 'History', sk: 'História' },
         icon: 'history',
         route: '/history',
+        category: 'tools',
         translationKey: 'menuHistory'
-      }
-    ]
-  },
-  {
-    id: 'settings',
-    label: 'Settings',
-    translationKey: 'menuSettings',
-    items: [
+      },
       {
         id: 'settings',
         label: 'Settings',
+        title: { en: 'Settings', sk: 'Nastavenia' },
         icon: 'settings',
         route: '/settings',
+        category: 'tools',
         translationKey: 'menuSettings'
       }
     ]

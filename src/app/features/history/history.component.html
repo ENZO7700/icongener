@@ -21,7 +21,7 @@
     
     <div class="filter-box">
       <span class="filter-label">{{ translate('filterByType') }}:</span>
-      <select [(ngModel)]="selectedType" (change)="setType(selectedType)">
+      <select [ngModel]="selectedType()" (ngModelChange)="selectedType.set($event); setType($event)">
         @for (type of types; track type) {
           <option [value]="type">{{ getTypeLabel(type) }}</option>
         }

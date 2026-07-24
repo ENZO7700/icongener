@@ -19,7 +19,7 @@ export class DashboardComponent implements OnInit {
       id: 'icons',
       title: { en: 'Icon Generator', sk: 'Generátor ikon' },
       description: { en: 'Generate PWA, Android, and iOS icons in all required sizes', sk: 'Generujte ikony pre PWA, Android a iOS vo všetkých potrebných veľkostiach' },
-      route: '/icons',
+      route: '/icon-generator',
       icon: `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 2L2 7l10 5 10-5-10-5z"/>
         <path d="M2 17l10 5 10-5"/>
@@ -31,7 +31,7 @@ export class DashboardComponent implements OnInit {
       id: 'favicons',
       title: { en: 'Favicon Generator', sk: 'Generátor faviconov' },
       description: { en: 'Create favicons in all standard sizes for browsers', sk: 'Vytvorte favicony vo všetkých štandardných veľkostiach pre prehliadače' },
-      route: '/favicons',
+      route: '/favicon-generator',
       icon: `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
         <path d="M9 9h6v6H9z"/>
@@ -42,7 +42,7 @@ export class DashboardComponent implements OnInit {
       id: 'banners',
       title: { en: 'Banner Generator', sk: 'Generátor bannerov' },
       description: { en: 'Generate banners for social media, websites, and ads', sk: 'Generujte bannery pre sociálne sieťe, webové stránky a reklamy' },
-      route: '/banners',
+      route: '/banner-generator',
       icon: `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <rect x="2" y="6" width="20" height="12" rx="2"/>
         <path d="M7 10h10"/>
@@ -124,6 +124,17 @@ export class DashboardComponent implements OnInit {
   
   constructor() {}
   
+  hexToRgb(hex: string): string {
+    const normalized = hex.replace('#', '');
+    const value = Number.parseInt(normalized, 16);
+
+    if (!Number.isFinite(value) || normalized.length !== 6) {
+      return '0, 0, 0';
+    }
+
+    return `${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}`;
+  }
+
   ngOnInit(): void {
     // Load saved language
     const savedLang = localStorage.getItem('language');

@@ -35,8 +35,8 @@ export class SettingsComponent implements OnInit {
       this.theme.set(savedTheme);
     }
     
-    // Load API key (if available)
-    this.apiKey.set(process.env['MISTRAL_API_KEY'] || '');
+    // The Mistral API key remains server-side and is never exposed to the browser.
+    this.apiKey.set('');
   }
   
   // Translation helper

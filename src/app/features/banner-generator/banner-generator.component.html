@@ -211,9 +211,9 @@
         @if (selectedBanner()) {
           <div class="banner-info">
             <div class="banner-details">
-              <span class="banner-name">{{ selectedBanner()?.preset.name }}</span>
-              <span class="banner-dimensions">{{ selectedBanner()?.preset.width }}x{{ selectedBanner()?.preset.height }} ({{ getAspectRatio(selectedBanner()!) }})</span>
-              <span class="banner-category">{{ selectedBanner()?.preset.category }}</span>
+              <span class="banner-name">{{ selectedBanner()?.preset?.name }}</span>
+              <span class="banner-dimensions">{{ selectedBanner()?.preset?.width }}x{{ selectedBanner()?.preset?.height }} ({{ getAspectRatio(selectedBanner()!) }})</span>
+              <span class="banner-category">{{ selectedBanner()?.preset?.category }}</span>
             </div>
           </div>
         }

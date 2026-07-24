@@ -24,17 +24,17 @@ export const routes: Routes = [
         title: 'Dashboard - IconGener'
       },
       {
-        path: 'icons',
+        path: 'icon-generator',
         component: IconGeneratorComponent,
         title: 'Icon Generator - IconGener'
       },
       {
-        path: 'favicons',
+        path: 'favicon-generator',
         component: FaviconGeneratorComponent,
         title: 'Favicon Generator - IconGener'
       },
       {
-        path: 'banners',
+        path: 'banner-generator',
         component: BannerGeneratorComponent,
         title: 'Banner Generator - IconGener'
       },

@@ -22,51 +22,30 @@ describe('HeaderComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should get current time', () => {
-    const time = component.getCurrentTime();
+  it('should have current time signal', () => {
+    const time = component.currentTime();
     expect(time).toBeTruthy();
-    expect(time.length).toBeGreaterThan(0);
-  });
-
-  it('should get formatted date', () => {
-    const date = component.getFormattedDate();
-    expect(date).toBeTruthy();
-    expect(date.length).toBeGreaterThan(0);
   });
 
   it('should toggle sidebar', () => {
-    const spy = spyOn(component.sidebarToggle, 'emit');
+    const spy = spyOn(component.toggleSidebar, 'emit');
     component.onToggleSidebar();
     expect(spy).toHaveBeenCalled();
   });
 
-  it('should toggle language', () => {
-    const initialLang = component.language();
-    component.toggleLanguage();
-    expect(component.language()).not.toBe(initialLang);
+  it('should change language', () => {
+    const spy = spyOn(component.languageChange, 'emit');
+    component.onLanguageChange('sk');
+    expect(spy).toHaveBeenCalledWith('sk');
   });
 
-  it('should get language label', () => {
-    component.language.set('en');
-    expect(component.getLanguageLabel()).toBe('EN');
-    
-    component.language.set('sk');
-    expect(component.getLanguageLabel()).toBe('SK');
+  it('should get current route', () => {
+    const route = component.currentRoute;
+    expect(route).toBeTruthy();
   });
 
   it('should get page title', () => {
-    component.pageTitle.set('Test Page');
-    expect(component.getPageTitle()).toBe('Test Page');
-  });
-
-  it('should update time on interval', (done) => {
-    const initialTime = component.getCurrentTime();
-    
-    setTimeout(() => {
-      const newTime = component.getCurrentTime();
-      // Time should update (or stay the same if same minute)
-      expect(newTime).toBeTruthy();
-      done();
-    }, 1000);
+    const title = component.pageTitle;
+    expect(title).toBeTruthy();
   });
 });

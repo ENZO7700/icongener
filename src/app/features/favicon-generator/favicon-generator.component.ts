@@ -51,7 +51,7 @@ export class FaviconGeneratorComponent implements OnInit {
   // Injected services
   private aiService = inject(AiService);
   private downloadService = inject(DownloadService);
-  private progressService = inject(ProgressService);
+  readonly progressService = inject(ProgressService);
   private toastService = inject(ToastService);
   
   // Favicon sizes

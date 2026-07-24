@@ -1,4 +1,4 @@
-import { Component, input, output, signal, OnInit, inject } from '@angular/core';
+import { Component, input, output, signal, OnInit, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { LogoComponent } from '../logo/logo.component';
@@ -20,24 +20,29 @@ export class SidebarComponent implements OnInit {
   toggle = output<void>();
   
   // State
-  menuItems = MENU_ITEMS;
+  menuItems = signal<MenuCategory[]>(MENU_ITEMS);
   icons = ICONS;
   activeRoute = signal<string>('');
+  currentPath = signal<string>('');
   expandedCategories = signal<Set<string>>(new Set(['main', 'generators']));
   
   // Injected services
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  
+
   constructor() {}
-  
+
   ngOnInit(): void {
     // Set initial active route
-    this.activeRoute.set(this.router.url.split('?')[0]);
+    const path = this.router.url.split('?')[0];
+    this.activeRoute.set(path);
+    this.currentPath.set(path);
     
     // Listen to route changes
     this.router.events.subscribe(() => {
-      this.activeRoute.set(this.router.url.split('?')[0]);
+      const newPath = this.router.url.split('?')[0];
+      this.activeRoute.set(newPath);
+      this.currentPath.set(newPath);
     });
   }
   
@@ -61,13 +66,31 @@ export class SidebarComponent implements OnInit {
     return this.expandedCategories().has(categoryId);
   }
   
-  isItemActive(item: MenuItem): boolean {
-    return this.activeRoute() === item.route || 
-           this.activeRoute().startsWith(item.route + '/');
+  isActive(item: MenuItem): boolean {
+    return this.currentPath() === item.route || 
+           this.currentPath().startsWith(item.route + '/');
   }
   
   getIcon(iconKey: string): string {
     return this.icons[iconKey] || this.icons['dashboard'];
+  }
+  
+  getPath(item: MenuItem): string {
+    return item.route;
+  }
+  
+  getLabel(item: MenuItem): string {
+    return item.title[this.language()] || item.label;
+  }
+  
+  getItemsForCategory(categoryId: string): MenuItem[] {
+    const categories = this.menuItems();
+    const category = categories.find(c => c.id === categoryId);
+    return category?.items || [];
+  }
+  
+  setCurrentPath(path: string): void {
+    this.currentPath.set(path);
   }
   
   // Translation helper (will be connected to main translations later)

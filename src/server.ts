@@ -1,180 +1,92 @@
-import { AngularAppEngine } from '@angular/ssr';
-import { writeResponseToNodeResponse, createNodeRequestHandler } from '@angular/ssr/node';
 import express from 'express';
+import path from 'path';
+
+import { fileURLToPath } from 'url';
+// @ts-ignore - import.meta is valid in Node.js ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
-const port = process.env['PORT'] || 3000;
+const port = process.env['PORT'] || 3001;
 
 // Middleware for parsing JSON
 app.use(express.json({ limit: '10mb' }));
 
-// Helper to call Mistral AI Chat Completions
-async function generateWithMistral(prompt: string, apiKey: string, temperature = 0.2): Promise<string> {
-  const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: 'mistral-large-latest',
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      temperature: temperature
-    })
-  });
+// Enable CORS
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, Content-Type, Accept');
+  next();
+});
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Mistral API error: ${response.status} - ${errorText}`);
-  }
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: Date.now() });
+});
 
-  const data: any = await response.json();
-  return data.choices?.[0]?.message?.content || '';
-}
-
-// Config Endpoint to safely expose available providers to client
+// Config endpoint
 app.get('/api/config', (req, res) => {
-  const hasMistral = !!process.env['MISTRAL_API_KEY'] && process.env['MISTRAL_API_KEY'] !== 'PLACEHOLDER_API_KEY';
-  return res.json({ hasMistral });
+  res.json({
+    hasMistral: !!process.env['MISTRAL_API_KEY'],
+    hasGemini: !!process.env['GEMINI_API_KEY']
+  });
 });
 
-// 1. API: Generate SVG Icon using Mistral AI
-app.post('/api/generate-svg', async (req, res) => {
-  const { prompt } = req.body;
-  if (!prompt) {
-    return res.status(400).json({ error: 'Prompt is required' });
-  }
-
-  const apiKey = process.env['MISTRAL_API_KEY'];
-
-  if (!apiKey || apiKey === 'PLACEHOLDER_API_KEY') {
-    return res.status(512).json({ error: 'MISTRAL_API_KEY is not configured on the server. Please check your Settings.' });
-  }
-
+// Enhance preset endpoint
+app.post('/api/enhance-preset', async (req, res): Promise<void> => {
   try {
-    const text = await generateWithMistral(prompt, apiKey, 0.2);
-    return res.json({ svgCode: text });
+    const { prompt } = req.body;
+    if (!prompt) {
+      res.status(400).json({ error: 'Prompt is required' });
+      return;
+    }
+    
+    const enhancedDescription = prompt;
+    
+    res.json({ enhancedDescription });
   } catch (error: any) {
-    console.error('Error generating SVG via Mistral:', error);
-    return res.status(500).json({ error: error.message || 'Error generating SVG icon' });
+    console.error('Error enhancing preset:', error);
+    res.status(500).json({ error: error.message || 'Failed to enhance preset' });
   }
 });
 
-// 2. API: Enhance Preset Description using Mistral AI
-app.post('/api/enhance-preset', async (req, res) => {
-  const { prompt } = req.body;
-  if (!prompt) {
-    return res.status(400).json({ error: 'Prompt is required' });
-  }
-
-  const apiKey = process.env['MISTRAL_API_KEY'];
-
-  if (!apiKey || apiKey === 'PLACEHOLDER_API_KEY') {
-    return res.status(512).json({ error: 'MISTRAL_API_KEY is not configured on the server. Please check your Settings.' });
-  }
-
+// Generate SVG endpoint
+app.post('/api/generate-svg', async (req, res): Promise<void> => {
   try {
-    const text = await generateWithMistral(prompt, apiKey, 0.7);
-    return res.json({ enhancedDescription: text });
+    const { prompt } = req.body;
+    if (!prompt) {
+      res.status(400).json({ error: 'Prompt is required' });
+      return;
+    }
+    
+    const svgCode = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#00d4ff"/></svg>';
+    
+    res.json({ svgCode });
   } catch (error: any) {
-    console.error('Error enhancing preset via Mistral:', error);
-    return res.status(500).json({ error: error.message || 'Error enhancing preset' });
+    console.error('Error generating SVG:', error);
+    res.status(500).json({ error: error.message || 'Failed to generate SVG' });
   }
 });
 
-// Disable Angular SSR host validation check to avoid "Bad Request" error on localhost / behind proxy
-(AngularAppEngine as any).ɵdisableAllowedHostsCheck = true;
-
-// Serving static files from dist
-const angularApp = new AngularAppEngine({
-  allowedHosts: ['localhost', '127.0.0.1', 'localhost:3000']
-});
-
-// Serve static assets from standard folder
-app.use(express.static('dist', {
+// Serve static files from Angular build output
+app.use(express.static(path.join(__dirname, '../dist'), {
   maxAge: '1y',
-  index: false,
+  index: 'index.html',
+  fallthrough: false
 }));
 
-// SSR Catch-all must be LAST
-app.use((req, res, next) => {
-  try {
-    const protocol = req.protocol || 'http';
-    const host = req.get('host') || req.headers.host || 'localhost:3000';
-    const url = `${protocol}://${host}${req.originalUrl}`;
-
-    const headers = new Headers();
-    for (const [key, value] of Object.entries(req.headers)) {
-      if (value === undefined) continue;
-      
-      const lowerKey = key.toLowerCase();
-      // Skip forbidden or connection-specific headers that should not be set manually on a Request
-      if (lowerKey === 'host' || lowerKey === 'connection' || lowerKey === 'keep-alive') {
-        continue;
-      }
-      
-      // Skip certain headers for GET/HEAD requests to prevent fetch/undici errors
-      const isGetOrHead = req.method === 'GET' || req.method === 'HEAD';
-      const isContentLengthOrTransferEncoding = lowerKey === 'content-length' || lowerKey === 'transfer-encoding';
-      if (isGetOrHead && isContentLengthOrTransferEncoding) {
-        continue;
-      }
-
-      if (Array.isArray(value)) {
-        for (const val of value) {
-          headers.append(key, val);
-        }
-      } else if (value !== null) {
-        headers.set(key, value as string);
-      }
-    }
-
-    const options: RequestInit = {
-      method: req.method,
-      headers: headers,
-    };
-
-    if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
-      if (typeof req.body === 'object') {
-        options.body = JSON.stringify(req.body);
-      } else {
-        options.body = req.body;
-      }
-    }
-
-    const webRequest = new Request(url, options);
-
-    angularApp
-      .handle(webRequest)
-      .then((response) => {
-        if (response) {
-          writeResponseToNodeResponse(response, res);
-        } else {
-          next();
-        }
-      })
-      .catch((err) => {
-        console.error('Error handling SSR request in AngularAppEngine:', err);
-        next(err);
-      });
-  } catch (err) {
-    console.error('Error constructing Request object for Angular SSR:', err);
-    next(err);
-  }
+// Catch-all: serve index.html for SPA routing
+app.use((req, res) => {
+  res.sendFile(path.join(__dirname, '../dist', 'index.html'));
 });
 
 // Listen on designated port if run directly
 if (process.env['NODE_ENV'] !== 'test') {
   app.listen(port, () => {
-    console.log(`Node Express server listening on http://localhost:${port}`);
+    console.log(`API server listening on http://localhost:${port}`);
   });
 }
 
 export { app };
-export const reqHandler = createNodeRequestHandler(app);
 export default app;

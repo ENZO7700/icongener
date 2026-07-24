@@ -37,7 +37,7 @@ export class IconGeneratorComponent implements OnInit {
   
   // Injected services
   private iconGeneratorService = inject(IconGeneratorService);
-  private progressService = inject(ProgressService);
+  readonly progressService = inject(ProgressService);
   private toastService = inject(ToastService);
   private downloadService = inject(DownloadService);
   

@@ -17,7 +17,7 @@
 
   <!-- Menu Content -->
   <nav class="menu-content">
-    @for (category of menuItems; track category.id) {
+    @for (category of menuItems(); track category.id) {
       <div class="menu-category">
         <!-- Category Header -->
         <div 
@@ -49,7 +49,7 @@
             <a 
               [routerLink]="item.route"
               class="menu-item"
-              [class.active]="isItemActive(item)"
+              [class.active]="isActive(item)"
               routerLinkActive="active"
             >
               <span class="item-icon" [innerHTML]="getIcon(item.icon)"></span>

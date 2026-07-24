@@ -78,7 +78,7 @@ export class IconGeneratorService {
   ];
   
   // Shape definitions
-  shapes: { id: string; name: string; borderRadius: number }[] = [
+  shapes: { id: 'circle' | 'square' | 'rounded'; name: string; borderRadius: number }[] = [
     { id: 'circle', name: 'Circle', borderRadius: 50 },
     { id: 'square', name: 'Square', borderRadius: 0 },
     { id: 'rounded', name: 'Rounded Square', borderRadius: 20 }

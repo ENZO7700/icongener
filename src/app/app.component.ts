@@ -1,12 +1,11 @@
 import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet } from '@angular/router';
 import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, MainLayoutComponent],
+  imports: [CommonModule, MainLayoutComponent],
   template: `
     <app-main-layout></app-main-layout>
   `,

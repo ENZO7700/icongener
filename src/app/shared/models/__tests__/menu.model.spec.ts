@@ -10,6 +10,7 @@ describe('Menu Model', () => {
     it('should have required properties', () => {
       const menuItem: MenuItem = {
         id: 'test',
+        label: 'Test',
         title: { en: 'Test', sk: 'Test' },
         icon: 'test-icon',
         route: '/test',
@@ -28,6 +29,7 @@ describe('Menu Model', () => {
     it('should have optional properties', () => {
       const menuItem: MenuItem = {
         id: 'test',
+        label: 'Test',
         title: { en: 'Test', sk: 'Test' },
         icon: 'test-icon',
         route: '/test',
@@ -49,6 +51,7 @@ describe('Menu Model', () => {
     it('should have required properties', () => {
       const category: MenuCategory = {
         id: 'test',
+        label: 'Test Category',
         title: { en: 'Test Category', sk: 'Test Kategória' },
         icon: 'category-icon',
         items: []
@@ -65,6 +68,7 @@ describe('Menu Model', () => {
     it('should have optional properties', () => {
       const category: MenuCategory = {
         id: 'test',
+        label: 'Test Category',
         title: { en: 'Test Category', sk: 'Test Kategória' },
         icon: 'category-icon',
         items: [],

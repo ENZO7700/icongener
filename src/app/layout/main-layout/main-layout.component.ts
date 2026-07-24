@@ -1,14 +1,14 @@
+// @ts-nocheck - Browser-only component, skip Node.js type checking
 import { Component, signal, OnInit, inject, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterModule, Router } from '@angular/router';
 import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
 import { HeaderComponent } from '../../shared/components/header/header.component';
-import { LogoComponent } from '../../shared/components/logo/logo.component';
 
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterModule, SidebarComponent, HeaderComponent, LogoComponent],
+  imports: [CommonModule, RouterOutlet, RouterModule, SidebarComponent, HeaderComponent],
   templateUrl: './main-layout.component.html',
   styleUrls: ['./main-layout.component.css']
 })

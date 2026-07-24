@@ -267,5 +267,3 @@ export class ToastContainerComponent {
   toastService = inject(ToastService);
 }
 
-// Export the container component for use in other components
-export { ToastContainerComponent };

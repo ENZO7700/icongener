@@ -46,7 +46,19 @@
   text-align: center;
 }
 
-.mobile-toggle svg {
+.mobile-close {
+  display: none;
+  background: none;
+  border: none;
+  color: #e0e0e0;
+  padding: 12px;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+}
+
+.mobile-toggle svg,
+.mobile-close svg {
   width: 24px;
   height: 24px;
 }
@@ -212,7 +224,8 @@
     transform: translateX(-100%);
   }
   
-  .mobile-toggle {
+  .mobile-toggle,
+  .mobile-close {
     display: block;
   }
   
@@ -227,6 +240,28 @@
   .menu-item {
     padding: 12px 20px 12px 40px;
     font-size: 0.85rem;
+  }
+  
+  /* Position close button at top-right of sidebar */
+  .mobile-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: auto;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 50%;
+    z-index: 1001;
+  }
+  
+  /* Position open button centered when closed */
+  .mobile-toggle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: auto;
+    padding: 8px;
   }
 }
 

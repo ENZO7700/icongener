@@ -22,6 +22,7 @@ export class HeaderComponent implements OnInit {
   // State
   currentTime = signal<string>('');
   isMobile = signal<boolean>(false);
+  hideOnScroll = signal<boolean>(false);
   
   // Injected services
   private router = inject(Router);
@@ -34,6 +35,9 @@ export class HeaderComponent implements OnInit {
     
     this.checkMobile();
     window.addEventListener('resize', () => this.checkMobile());
+    
+    // Auto-hide header on scroll
+    this.setupScrollListener();
   }
   
   private updateTime(): void {
@@ -46,6 +50,23 @@ export class HeaderComponent implements OnInit {
   
   private checkMobile(): void {
     this.isMobile.set(window.innerWidth <= 768);
+  }
+  
+  private setupScrollListener(): void {
+    let lastScrollPosition = 0;
+    
+    window.addEventListener('scroll', () => {
+      const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+      
+      // Hide header when scrolling down, show when scrolling up
+      if (currentScrollPosition > lastScrollPosition && currentScrollPosition > 64) {
+        this.hideOnScroll.set(true);
+      } else {
+        this.hideOnScroll.set(false);
+      }
+      
+      lastScrollPosition = currentScrollPosition;
+    });
   }
   
   onToggleSidebar(): void {
@@ -79,5 +100,6 @@ export class HeaderComponent implements OnInit {
   
   ngOnDestroy(): void {
     window.removeEventListener('resize', () => this.checkMobile());
+    // Scroll listener will be garbage collected with the component
   }
 }

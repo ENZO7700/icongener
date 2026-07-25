@@ -12,7 +12,12 @@
   right: 0;
   z-index: 999;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  transition: left 0.3s ease;
+  transition: all 0.3s ease;
+}
+
+/* Auto-hide header on scroll down */
+.header.hide-on-scroll {
+  transform: translateY(-100%);
 }
 
 /* Left Section */

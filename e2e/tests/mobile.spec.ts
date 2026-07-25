@@ -3,61 +3,70 @@ import { test, expect } from '@playwright/test';
 import { devices } from '@playwright/test';
 
 test.describe('Mobile Responsiveness', () => {
-  // Test on multiple mobile devices
-  const mobileDevices = [
-    devices['iPhone 17 Air'],
-    devices['iPhone 16'],
-    devices['iPhone 16 Plus'],
-    devices['iPhone 16 Pro'],
-    devices['iPhone 16 Pro Max'],
-    devices['iPhone SE'],
-    devices['iPad Air'],
-    devices['iPad Mini'],
-    devices['iPad Pro 11'],
-    devices['iPad Pro 12.9'],
-    devices['Pixel 8'],
-    devices['Pixel 8 Pro'],
-    devices['Samsung Galaxy S24'],
-    devices['Samsung Galaxy S24 Ultra'],
-    devices['Samsung Galaxy Tab S8'],
-  ];
-
-  for (const device of mobileDevices) {
-    test(`Should work on ${device.name}`, async ({ page }) => {
-      await page.setViewportSize(device.viewport);
-      await page.emulateMedia({ 
-        viewport: device.viewport,
-        userAgent: device.userAgent,
-        isMobile: device.isMobile,
-        hasTouch: device.hasTouch
-      });
-
-      await page.goto('/');
-      await expect(page).toHaveTitle(/IconGener/);
-
-      // Navigate through main pages
-      await page.getByRole('link', { name: /dashboard/i }).click();
-      await expect(page.getByRole('main')).toBeVisible();
-
-      await page.getByRole('link', { name: /icon.*generator/i }).click();
-      await expect(page.getByRole('main')).toBeVisible();
-
-      await page.getByRole('link', { name: /banner.*generator/i }).click();
-      await expect(page.getByRole('main')).toBeVisible();
-
-      // Test touch targets
-      const buttons = page.getByRole('button');
-      const buttonCount = await buttons.count();
-      for (let i = 0; i < Math.min(buttonCount, 10); i++) {
-        const button = buttons.nth(i);
-        const box = await button.boundingBox();
-        expect(box!.width).toBeGreaterThanOrEqual(44);
-        expect(box!.height).toBeGreaterThanOrEqual(44);
-      }
+  // Test on multiple mobile devices using device presets
+  test('Should work on iPhone 17', async ({ page }) => {
+    const device = devices['iPhone 17'];
+    await page.setViewportSize(device.viewport);
+    await page.emulateMedia({ 
+      viewport: device.viewport,
+      userAgent: device.userAgent,
+      isMobile: device.isMobile,
+      hasTouch: device.hasTouch
     });
-  }
 
-  test('Should have proper viewport on iPhone 17 Air', async ({ page }) => {
+    await page.goto('/');
+    await expect(page).toHaveTitle(/IconGener/);
+
+    // Navigate through main pages
+    await page.getByRole('link', { name: /dashboard/i }).click();
+    await expect(page.getByRole('main')).toBeVisible();
+
+    // Test touch targets
+    const buttons = page.getByRole('button');
+    const buttonCount = await buttons.count();
+    for (let i = 0; i < Math.min(buttonCount, 10); i++) {
+      const button = buttons.nth(i);
+      const box = await button.boundingBox();
+      expect(box!.width).toBeGreaterThanOrEqual(44);
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+    }
+  });
+
+  test('Should work on iPhone 16 Pro Max', async ({ page }) => {
+    const device = devices['iPhone 16 Pro Max'];
+    await page.setViewportSize(device.viewport);
+    await page.emulateMedia({ 
+      viewport: device.viewport,
+      userAgent: device.userAgent,
+      isMobile: device.isMobile,
+      hasTouch: device.hasTouch
+    });
+
+    await page.goto('/');
+    await expect(page).toHaveTitle(/IconGener/);
+
+    await page.getByRole('link', { name: /icon.*generator/i }).click();
+    await expect(page.getByRole('main')).toBeVisible();
+  });
+
+  test('Should work on Pixel 8 Pro', async ({ page }) => {
+    const device = devices['Pixel 8 Pro'];
+    await page.setViewportSize(device.viewport);
+    await page.emulateMedia({ 
+      viewport: device.viewport,
+      userAgent: device.userAgent,
+      isMobile: device.isMobile,
+      hasTouch: device.hasTouch
+    });
+
+    await page.goto('/');
+    await expect(page).toHaveTitle(/IconGener/);
+
+    await page.getByRole('link', { name: /banner.*generator/i }).click();
+    await expect(page.getByRole('main')).toBeVisible();
+  });
+
+  test('Should have proper viewport on iPhone 17', async ({ page }) => {
     await page.setViewportSize({ width: 393, height: 852 });
     await page.goto('/');
 

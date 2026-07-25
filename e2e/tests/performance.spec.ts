@@ -77,13 +77,13 @@ test.describe('Performance', () => {
     }
   });
 
-  test('Should have gzip compression for HTML', async ({ page }) => {
+  test.skip('Should have gzip compression for HTML', async ({ page }) => {
     const response = await page.request.get('http://localhost:3000/');
     const contentEncoding = response.headers()['content-encoding'];
     
     // Check if compression is enabled (optional)
     expect(contentEncoding).toBeDefined();
-  }).skip();
+  });
 
   test('Should lazy load non-critical JavaScript', async ({ page }) => {
     await page.goto('/');

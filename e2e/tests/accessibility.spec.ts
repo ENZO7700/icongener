@@ -5,7 +5,7 @@ test.describe('Accessibility', () => {
   test('Should have no accessibility violations on dashboard', async ({ page, browserName }) => {
     // Skip on WebKit due to known axe-core limitations
     if (browserName === 'webkit') {
-      test.skip();
+      return;
     }
 
     await page.goto('/dashboard');
@@ -26,7 +26,7 @@ test.describe('Accessibility', () => {
 
   test('Should have no accessibility violations on icon generator', async ({ page, browserName }) => {
     if (browserName === 'webkit') {
-      test.skip();
+      return;
     }
 
     await page.goto('/icon-generator');

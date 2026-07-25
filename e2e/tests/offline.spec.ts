@@ -1,5 +1,5 @@
 // e2e/tests/offline.spec.ts
-import { test, expect } from './baseTest';
+import { test, expect } from '@playwright/test';
 
 test.describe('Offline Capabilities', () => {
   test('Should register service worker', async ({ page }) => {
@@ -17,8 +17,8 @@ test.describe('Offline Capabilities', () => {
     // Go online first
     await page.goto('/');
 
-    // Go offline
-    await page.setOffline(true);
+    // Go offline - use context.setOffline
+    await page.context().setOffline(true);
 
     // Navigate to a cached page
     await page.goto('/dashboard');
@@ -32,14 +32,15 @@ test.describe('Offline Capabilities', () => {
     await page.goto('/');
 
     // Get the service worker cache
-    const caches = await page.evaluate(() => {
-      return caches.keys().then(keys => keys.map(k => k.url));
+    const cacheNames: string[] = await page.evaluate(async () => {
+      const keys = await caches.keys();
+      return keys.map(k => k.url);
     });
 
     // Should have some cached assets
-    expect(caches.length).toBeGreaterThan(0);
-    expect(caches.some(c => c.includes('.js'))).toBeTruthy();
-    expect(caches.some(c => c.includes('.css'))).toBeTruthy();
+    expect(cacheNames.length).toBeGreaterThan(0);
+    expect(cacheNames.some(c => c.includes('.js'))).toBeTruthy();
+    expect(cacheNames.some(c => c.includes('.css'))).toBeTruthy();
   });
 
   test('Should work with manifest', async ({ page }) => {
@@ -87,7 +88,7 @@ test.describe('Offline Capabilities', () => {
     await page.goto('/api/health');
 
     // Go offline
-    await page.setOffline(true);
+    await page.context().setOffline(true);
 
     // Try to fetch the cached response
     const response = await page.request.get('http://localhost:3000/api/health').catch(() => null);
@@ -100,14 +101,15 @@ test.describe('Offline Capabilities', () => {
 
   test('Should show fallback when offline and no cache', async ({ page }) => {
     // Clear cache
-    await page.evaluate(() => {
-      return caches.keys().then(keys => {
-        return Promise.all(keys.map(key => caches.delete(key)));
-      });
+    await page.evaluate(async () => {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(async (key: Cache) => {
+        await caches.delete(key);
+      }));
     });
 
     // Go offline
-    await page.setOffline(true);
+    await page.context().setOffline(true);
 
     // Navigate to a page
     await page.goto('/');

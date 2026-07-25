@@ -1,5 +1,5 @@
 // e2e/tests/mobile.spec.ts
-import { test, expect } from './baseTest';
+import { test, expect } from '@playwright/test';
 import { devices } from '@playwright/test';
 
 test.describe('Mobile Responsiveness', () => {
@@ -25,7 +25,12 @@ test.describe('Mobile Responsiveness', () => {
   for (const device of mobileDevices) {
     test(`Should work on ${device.name}`, async ({ page }) => {
       await page.setViewportSize(device.viewport);
-      await page.emulateMedia({ ...device });
+      await page.emulateMedia({ 
+        viewport: device.viewport,
+        userAgent: device.userAgent,
+        isMobile: device.isMobile,
+        hasTouch: device.hasTouch
+      });
 
       await page.goto('/');
       await expect(page).toHaveTitle(/IconGener/);
@@ -107,7 +112,7 @@ test.describe('Mobile Responsiveness', () => {
 
     // Check that full-height elements use 100dvh
     const fullHeightElements = page.locator('[style*="height: 100dvh"]');
-    await expect(fullHeightElements).toHaveCountGreaterThan(0);
+    expect(await fullHeightElements.count()).toBeGreaterThan(0);
   });
 
   test('Should have mobile touch targets for form inputs', async ({ page }) => {

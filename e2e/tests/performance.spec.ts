@@ -1,5 +1,5 @@
 // e2e/tests/performance.spec.ts
-import { test, expect } from './baseTest';
+import { test, expect } from '@playwright/test';
 
 test.describe('Performance', () => {
   test('Should load homepage in < 3s', async ({ page }) => {
@@ -101,7 +101,7 @@ test.describe('Performance', () => {
 
     // Check for lazy loading on images
     const images = page.locator('img[loading="lazy"]');
-    await expect(images).toHaveCountGreaterThanOrEqual(0);
+    expect(await images.count()).toBeGreaterThanOrEqual(0);
   });
 
   test('Should have preload for critical resources', async ({ page }) => {
@@ -109,6 +109,6 @@ test.describe('Performance', () => {
 
     // Check for preload tags
     const preloads = page.locator('link[rel="preload"]');
-    await expect(preloads).toHaveCountGreaterThanOrEqual(0);
+    expect(await preloads.count()).toBeGreaterThanOrEqual(0);
   });
 });

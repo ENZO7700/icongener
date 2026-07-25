@@ -1,5 +1,5 @@
 // e2e/tests/accessibility.spec.ts
-import { test, expect } from './baseTest';
+import { test, expect } from '@playwright/test';
 
 test.describe('Accessibility', () => {
   test('Should have no accessibility violations on dashboard', async ({ page, browserName }) => {
@@ -128,13 +128,13 @@ test.describe('Accessibility', () => {
     await page.goto('/');
 
     const h1 = page.locator('h1');
-    await expect(h1).toHaveCountGreaterThanOrEqual(1);
+    await expect(h1).toHaveCount(1);
 
     const h2 = page.locator('h2');
-    await expect(h2.count()).toBeGreaterThanOrEqual(0);
+    expect(await h2.count()).toBeGreaterThanOrEqual(0);
 
     const h3 = page.locator('h3');
-    await expect(h3.count()).toBeGreaterThanOrEqual(0);
+    expect(await h3.count()).toBeGreaterThanOrEqual(0);
   });
 
   test('Should have color contrast for text', async ({ page }) => {

@@ -1,6 +1,0 @@
-{
-  "name": "PWA Icon Generator",
-  "description": "Generate high-quality PWA application icons in standard sizes from a product description and URL using Mistral AI. Supports custom aspect ratios.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

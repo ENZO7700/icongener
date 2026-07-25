@@ -1,6 +1,6 @@
 import { bootstrapApplication, BootstrapContext } from '@angular/platform-browser';
 import { provideZonelessChangeDetection } from '@angular/core';
-import { AppComponent } from './app.component';
+import { AppComponent } from './app/app.component';
 
 const bootstrap = (context: BootstrapContext) => bootstrapApplication(AppComponent, {
   providers: [

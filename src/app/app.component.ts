@@ -1,22 +1,17 @@
-import { Component, signal, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 
+/**
+ * Root shell only. Layout lives on the route tree (MainLayoutComponent)
+ * so we do not nest two layouts (which duplicated main/nav/h1 in the DOM).
+ */
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, MainLayoutComponent],
-  template: `
-    <app-main-layout></app-main-layout>
-  `,
+  imports: [RouterOutlet],
+  template: `<router-outlet></router-outlet>`,
   styles: []
 })
-export class AppComponent implements OnInit {
+export class AppComponent {
   title = 'icongener';
-  
-  constructor() {}
-  
-  ngOnInit(): void {
-    // App initialization
-  }
 }

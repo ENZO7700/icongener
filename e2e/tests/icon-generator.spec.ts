@@ -81,7 +81,7 @@ test.describe('Icon Generator Tests', () => {
   });
 
   test('should have background color picker', async ({ page }) => {
-    const bgColorPicker = page.locator('input[type="color"] >> n=1, [data-testid="bg-color-picker"]');
+    const bgColorPicker = page.locator('input[type="color"]').nth(1);
     if (await bgColorPicker.count() > 0) {
       await expect(bgColorPicker).toBeVisible();
     }

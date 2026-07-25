@@ -13,11 +13,20 @@ export interface PixelData {
   color: string;
 }
 
+export interface Rectangle {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: string;
+}
+
 export interface GeneratedHtml {
   id: string;
   htmlCode: string;
   cssCode: string;
   pixelData: PixelData[];
+  rectangles: Rectangle[];
   width: number;
   height: number;
   timestamp: number;
@@ -303,15 +312,19 @@ export class PngToHtmlComponent implements OnInit {
       // Quantize colors
       const pixelData = this.quantizeImage(imageData, this.colorQuantization());
       
-      // Generate HTML and CSS
-      const htmlCode = this.generateHtmlCode(pixelData, cropWidth, cropHeight);
-      const cssCode = this.generateCssCode(pixelData);
+      // Apply RLE optimization to reduce file size
+      const rectangles = this.applyRLE(pixelData, cropWidth, cropHeight);
+      
+      // Generate HTML and CSS using optimized rectangles
+      const htmlCode = this.generateHtmlCode(rectangles, cropWidth, cropHeight);
+      const cssCode = this.generateCssCode(rectangles);
       
       const result: GeneratedHtml = {
         id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         htmlCode,
         cssCode,
         pixelData,
+        rectangles,
         width: cropWidth,
         height: cropHeight,
         timestamp: Date.now()
@@ -396,8 +409,74 @@ export class PngToHtmlComponent implements OnInit {
     return pixelData;
   }
   
+
+  // Apply RLE (Run-Length Encoding) to optimize pixel data into rectangles
+  // This reduces file size from O(n) to O(k) where k is number of color changes
+  private applyRLE(pixelData: PixelData[], width: number, height: number): Rectangle[] {
+    const rectangles: Rectangle[] = [];
+    
+    // Create a 2D grid for quick lookup
+    const grid: Map<number, Map<number, string>> = new Map();
+    pixelData.forEach(pixel => {
+      if (!grid.has(pixel.y)) {
+        grid.set(pixel.y, new Map());
+      }
+      grid.get(pixel.y)!.set(pixel.x, pixel.color);
+    });
+    
+    // Scan each row
+    for (let y = 0; y < height; y++) {
+      const row = grid.get(y);
+      if (!row) continue;
+      
+      let x = 0;
+      while (x < width) {
+        const currentColor = row.get(x);
+        if (!currentColor) {
+          x++;
+          continue;
+        }
+        
+        // Find how many consecutive pixels have the same color in this row
+        let runWidth = 1;
+        while (x + runWidth < width && row.get(x + runWidth) === currentColor) {
+          runWidth++;
+        }
+        
+        // Check if we can extend vertically (same color in next rows)
+        let runHeight = 1;
+        let canExtend = true;
+        
+        while (canExtend && y + runHeight < height) {
+          const nextRow = grid.get(y + runHeight);
+          if (!nextRow) break;
+          
+          // Check if all pixels in the run have the same color in next row
+          for (let i = 0; i < runWidth; i++) {
+            if (nextRow.get(x + i) !== currentColor) {
+              canExtend = false;
+              break;
+            }
+          }
+          if (canExtend) runHeight++;
+        }
+        
+        rectangles.push({
+          x,
+          y,
+          width: runWidth,
+          height: runHeight,
+          color: currentColor
+        });
+        
+        x += runWidth;
+      }
+    }
+    
+    return rectangles;
+  }
   // Generate HTML code
-  private generateHtmlCode(pixelData: PixelData[], width: number, height: number): string {
+  private generateHtmlCode(rectangles: Rectangle[], width: number, height: number): string {
     const pixelSize = this.pixelSize();
     const useInlineStyles = this.useInlineStyles();
     const includeComments = this.includeComments();
@@ -417,34 +496,36 @@ export class PngToHtmlComponent implements OnInit {
       html += `  <!-- Generated from PNG to HTML converter -->\n`;
       html += `  <!-- Original size: ${width}x${height} pixels -->\n`;
       html += `  <!-- Pixel size: ${pixelSize}px -->\n`;
-      html += `  <!-- Total pixels: ${pixelData.length} -->\n\n`;
+      html += `  <!-- Total rectangles: ${rectangles.length} (RLE optimized) -->\n\n`;
     }
     
     html += `  <div class="image-container" style="width: ${width * pixelSize}px; height: ${height * pixelSize}px; position: relative;">\n`;
     
-    // Group pixels by color for optimization
-    const pixelsByColor = new Map<string, PixelData[]>();
-    pixelData.forEach(pixel => {
-      if (!pixelsByColor.has(pixel.color)) {
-        pixelsByColor.set(pixel.color, []);
+    // Group rectangles by color for optimization
+    const rectanglesByColor = new Map<string, Rectangle[]>();
+    rectangles.forEach(rect => {
+      if (!rectanglesByColor.has(rect.color)) {
+        rectanglesByColor.set(rect.color, []);
       }
-      pixelsByColor.get(pixel.color)!.push(pixel);
+      rectanglesByColor.get(rect.color)!.push(rect);
     });
     
-    // Generate HTML for each color group
-    pixelsByColor.forEach((pixels, color) => {
+    // Generate HTML for each color group using rectangles (RLE optimized)
+    rectanglesByColor.forEach((rects, color) => {
       if (includeComments) {
         html += `    <!-- ${color} -->\n`;
       }
       
-      pixels.forEach(pixel => {
-        const left = pixel.x * pixelSize;
-        const top = pixel.y * pixelSize;
+      rects.forEach(rect => {
+        const left = rect.x * pixelSize;
+        const top = rect.y * pixelSize;
+        const rectWidth = rect.width * pixelSize;
+        const rectHeight = rect.height * pixelSize;
         
         if (useInlineStyles) {
-          html += `    <div style="position: absolute; left: ${left}px; top: ${top}px; width: ${pixelSize}px; height: ${pixelSize}px; background-color: ${color};"></div>\n`;
+          html += `    <div style="position: absolute; left: ${left}px; top: ${top}px; width: ${rectWidth}px; height: ${rectHeight}px; background-color: ${color};"></div>\n`;
         } else {
-          html += `    <div class="pixel ${this.sanitizeColorClass(color)}" style="left: ${left}px; top: ${top}px;"></div>\n`;
+          html += `    <div class="pixel ${this.sanitizeColorClass(color)}" style="left: ${left}px; top: ${top}px; width: ${rectWidth}px; height: ${rectHeight}px;"></div>\n`;
         }
       });
       

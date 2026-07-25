@@ -1,9 +1,16 @@
-<header class="header" [class.hide-on-scroll]="hideOnScroll()">
+<header class="header" [class.hide-on-scroll]="hideOnScroll()" role="banner">
   <!-- Left Section -->
   <div class="header-left">
     <!-- Mobile Menu Toggle -->
-    <button class="menu-toggle" (click)="onToggleSidebar()" *ngIf="isMobile()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <button
+      type="button"
+      class="menu-toggle"
+      (click)="onToggleSidebar()"
+      *ngIf="isMobile()"
+      aria-label="Toggle navigation menu"
+      title="Toggle navigation menu"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <line x1="3" y1="12" x2="21" y2="12"></line>
         <line x1="3" y1="6" x2="21" y2="6"></line>
         <line x1="3" y1="18" x2="21" y2="18"></line>
@@ -16,18 +23,18 @@
     </div>
   </div>
 
-  <!-- Center Section -->
+  <!-- Center Section: not an h1 so each page keeps a single document heading -->
   <div class="header-center">
-    <h1 class="header-title">
+    <p class="header-title">
       <span class="title-text">{{ title() || pageTitle }}</span>
-    </h1>
+    </p>
   </div>
 
   <!-- Right Section -->
   <div class="header-right">
     <!-- Time -->
     <div class="time-display">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="10"/>
         <polyline points="12 6 12 12 16 14"/>
       </svg>
@@ -37,18 +44,22 @@
     <!-- Language Toggle -->
     <div class="language-toggle">
       <button 
+        type="button"
         (click)="onLanguageChange('en')"
         class="lang-btn"
         [class.active]="language() === 'en'"
         title="English"
+        aria-label="Switch language to English"
       >
         EN
       </button>
       <button 
+        type="button"
         (click)="onLanguageChange('sk')"
         class="lang-btn"
         [class.active]="language() === 'sk'"
         title="Slovenčina"
+        aria-label="Switch language to Slovak"
       >
         SK
       </button>
@@ -56,8 +67,8 @@
 
     <!-- User Menu -->
     <div class="user-menu">
-      <button class="user-btn" title="User Settings">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <button type="button" class="user-btn" title="User Settings" aria-label="User settings">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
           <circle cx="12" cy="7" r="4"/>
         </svg>

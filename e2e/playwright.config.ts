@@ -77,11 +77,23 @@ export default defineConfig({
     },
   ],
 
-  /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'cd .. && npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000, // 2 minutes for server to start
-  },
+  /*
+   * Start API and web independently (not via `npm run dev` / concurrently -k).
+   * If only one port is free, concurrently would kill both when the other exits
+   * (e.g. EADDRINUSE on :3001). Separate entries can each reuse an existing process.
+   */
+  webServer: [
+    {
+      command: 'cd .. && npm run dev:api',
+      url: 'http://127.0.0.1:3001/api/health',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000,
+    },
+    {
+      command: 'cd .. && npm run dev:web',
+      url: 'http://127.0.0.1:3000',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000,
+    },
+  ],
 });

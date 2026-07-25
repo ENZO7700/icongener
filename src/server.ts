@@ -83,8 +83,17 @@ app.use((req, res) => {
 
 // Listen on designated port if run directly
 if (process.env['NODE_ENV'] !== 'test') {
-  app.listen(port, () => {
+  const server = app.listen(port, () => {
     console.log(`API server listening on http://localhost:${port}`);
+  });
+
+  server.on('error', (err: NodeJS.ErrnoException) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`Port ${port} is already in use. Stop the other process or set PORT.`);
+      process.exit(1);
+    }
+    console.error('API server error:', err);
+    process.exit(1);
   });
 }
 

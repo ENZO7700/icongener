@@ -1,14 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { AppComponent } from './app.component';
-import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
-import { RouterOutlet } from '@angular/router';
+import { provideRouter } from '@angular/router';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RouterOutlet],
-      declarations: [AppComponent],
-      providers: []
+      imports: [AppComponent],
+      providers: [provideRouter([])],
     }).compileComponents();
   });
 
@@ -24,10 +22,10 @@ describe('AppComponent', () => {
     expect(app.title).toBe('icongener');
   });
 
-  it('should render main layout', () => {
+  it('should render a router outlet (layout is route-level)', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('app-main-layout')).toBeTruthy();
+    expect(compiled.querySelector('router-outlet')).toBeTruthy();
   });
 });

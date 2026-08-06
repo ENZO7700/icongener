@@ -32,6 +32,8 @@ export interface GeneratedHtml {
   timestamp: number;
 }
 
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+
 @Component({
   selector: 'app-png-to-html',
   standalone: true,
@@ -77,7 +79,13 @@ export class PngToHtmlComponent implements OnInit {
   private downloadService = inject(DownloadService);
   readonly progressService = inject(ProgressService);
   private toastService = inject(ToastService);
+  private sanitizer = inject(DomSanitizer);
   
+  safeHtmlCode = computed<SafeHtml>(() => {
+    const code = this.generatedHtml()?.htmlCode;
+    return code ? this.sanitizer.bypassSecurityTrustHtml(code) : '';
+  });
+
   constructor() {}
   
   ngOnInit(): void {
@@ -475,124 +483,114 @@ export class PngToHtmlComponent implements OnInit {
     
     return rectangles;
   }
-  // Generate HTML code
+  // Convert rgba color string to shortest possible CSS color
+  private rgbaToHex(color: string): string {
+    const match = color.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/);
+    if (!match) return color;
+
+    const r = parseInt(match[1]);
+    const g = parseInt(match[2]);
+    const b = parseInt(match[3]);
+    const a = parseFloat(match[4]);
+
+    // If fully opaque, use hex shorthand
+    if (a >= 0.995) {
+      const hex = `#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`;
+      // Try shorthand hex (#rgb) if possible
+      if (hex[1] === hex[2] && hex[3] === hex[4] && hex[5] === hex[6]) {
+        return `#${hex[1]}${hex[3]}${hex[5]}`;
+      }
+      return hex;
+    }
+
+    // Semi-transparent: use rgba but with minimal precision
+    return `rgba(${r},${g},${b},${a})`;
+  }
+
+  // Build a color-to-class map with short sequential names (c0, c1, c2...)
+  private buildColorClassMap(rectangles: Rectangle[]): Map<string, { className: string; hexColor: string }> {
+    const colorMap = new Map<string, { className: string; hexColor: string }>();
+    let index = 0;
+
+    for (const rect of rectangles) {
+      if (!colorMap.has(rect.color)) {
+        colorMap.set(rect.color, {
+          className: `c${index++}`,
+          hexColor: this.rgbaToHex(rect.color)
+        });
+      }
+    }
+
+    return colorMap;
+  }
+
+  // Generate HTML code (optimized: CSS classes, hex colors, short names)
   private generateHtmlCode(rectangles: Rectangle[], width: number, height: number): string {
     const pixelSize = this.pixelSize();
-    const useInlineStyles = this.useInlineStyles();
     const includeComments = this.includeComments();
-    
+    const colorMap = this.buildColorClassMap(rectangles);
+
     let html = '<!DOCTYPE html>\n<html lang="en">\n<head>\n';
     html += '  <meta charset="UTF-8">\n';
     html += '  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n';
     html += '  <title>Generated Image</title>\n';
-    
-    if (!useInlineStyles) {
-      html += '  <link rel="stylesheet" href="styles.css">\n';
-    }
-    
+    html += '  <style>\n';
+
+    // Embed optimized CSS directly in <style> for single-file output
+    html += '.ic{position:relative;display:inline-block}\n';
+    html += '.p{position:absolute}\n';
+
+    // Color classes
+    colorMap.forEach(({ className, hexColor }) => {
+      html += `.${className}{background:${hexColor}}\n`;
+    });
+
+    html += '  </style>\n';
     html += '</head>\n<body>\n';
-    
+
     if (includeComments) {
-      html += `  <!-- Generated from PNG to HTML converter -->\n`;
-      html += `  <!-- Original size: ${width}x${height} pixels -->\n`;
-      html += `  <!-- Pixel size: ${pixelSize}px -->\n`;
-      html += `  <!-- Total rectangles: ${rectangles.length} (RLE optimized) -->\n\n`;
+      html += `  <!-- ${width}x${height}px, ${pixelSize}px/block, ${rectangles.length} rects -->\n`;
     }
-    
-    html += `  <div class="image-container" style="width: ${width * pixelSize}px; height: ${height * pixelSize}px; position: relative;">\n`;
-    
-    // Group rectangles by color for optimization
-    const rectanglesByColor = new Map<string, Rectangle[]>();
-    rectangles.forEach(rect => {
-      if (!rectanglesByColor.has(rect.color)) {
-        rectanglesByColor.set(rect.color, []);
-      }
-      rectanglesByColor.get(rect.color)!.push(rect);
-    });
-    
-    // Generate HTML for each color group using rectangles (RLE optimized)
-    rectanglesByColor.forEach((rects, color) => {
-      if (includeComments) {
-        html += `    <!-- ${color} -->\n`;
-      }
-      
-      rects.forEach(rect => {
-        const left = rect.x * pixelSize;
-        const top = rect.y * pixelSize;
-        const rectWidth = rect.width * pixelSize;
-        const rectHeight = rect.height * pixelSize;
-        
-        if (useInlineStyles) {
-          html += `    <div style="position: absolute; left: ${left}px; top: ${top}px; width: ${rectWidth}px; height: ${rectHeight}px; background-color: ${color};"></div>\n`;
-        } else {
-          html += `    <div class="pixel ${this.sanitizeColorClass(color)}" style="left: ${left}px; top: ${top}px; width: ${rectWidth}px; height: ${rectHeight}px;"></div>\n`;
-        }
-      });
-      
-      if (includeComments) {
-        html += '\n';
-      }
-    });
-    
+
+    html += `  <div class="ic" style="width:${width * pixelSize}px;height:${height * pixelSize}px">\n`;
+
+    // Generate divs with short class names and minimal inline positioning
+    for (const rect of rectangles) {
+      const entry = colorMap.get(rect.color)!;
+      const l = rect.x * pixelSize;
+      const t = rect.y * pixelSize;
+      const w = rect.width * pixelSize;
+      const h = rect.height * pixelSize;
+
+      html += `<div class="p ${entry.className}" style="left:${l}px;top:${t}px;width:${w}px;height:${h}px"></div>\n`;
+    }
+
     html += '  </div>\n</body>\n</html>';
-    
+
     return html;
   }
-  
-  // Generate CSS code
-  private generateCssCode(pixelData: PixelData[]): string {
-    const pixelSize = this.pixelSize();
+
+  // Generate standalone CSS code (for external stylesheet download)
+  private generateCssCode(rectangles: Rectangle[]): string {
     const includeComments = this.includeComments();
-    
-    let css = '/* Generated CSS from PNG to HTML converter */\n\n';
-    
-    css += '.image-container {\n';
-    css += '  position: relative;\n';
-    css += '  display: inline-block;\n';
-    css += '}\n\n';
-    
-    css += '.pixel {\n';
-    css += `  position: absolute;\n`;
-    css += `  width: ${pixelSize}px;\n`;
-    css += `  height: ${pixelSize}px;\n`;
-    css += '}\n\n';
-    
-    // Group pixels by color for CSS classes
-    const pixelsByColor = new Map<string, PixelData[]>();
-    pixelData.forEach(pixel => {
-      if (!pixelsByColor.has(pixel.color)) {
-        pixelsByColor.set(pixel.color, []);
-      }
-      pixelsByColor.get(pixel.color)!.push(pixel);
-    });
-    
-    // Generate CSS class for each color
-    pixelsByColor.forEach((pixels, color) => {
-      const className = this.sanitizeColorClass(color);
-      if (includeComments) {
-        css += `/* ${color} */\n`;
-      }
-      css += `.${className} {\n`;
-      css += `  background-color: ${color};\n`;
-      css += '}\n\n';
-    });
-    
-    return css;
-  }
-  
-  // Sanitize color for CSS class name
-  private sanitizeColorClass(color: string): string {
-    // Remove rgba() and replace with solid color name
-    if (color.startsWith('rgba(')) {
-      const match = color.match(/rgba\((\d+),\s*(\d+),\s*(\d+)/);
-      if (match) {
-        const r = parseInt(match[1]);
-        const g = parseInt(match[2]);
-        const b = parseInt(match[3]);
-        return `color-${r}-${g}-${b}`;
-      }
+    const colorMap = this.buildColorClassMap(rectangles);
+
+    let css = '';
+    if (includeComments) {
+      css += '/* Generated CSS – PNG to HTML converter */\n';
     }
-    return color.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+
+    css += '.ic{position:relative;display:inline-block}\n';
+    css += '.p{position:absolute}\n';
+
+    colorMap.forEach(({ className, hexColor }, originalColor) => {
+      if (includeComments) {
+        css += `/* ${originalColor} */\n`;
+      }
+      css += `.${className}{background:${hexColor}}\n`;
+    });
+
+    return css;
   }
   
   // Download HTML

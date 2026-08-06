@@ -93,13 +93,15 @@
               @if (showApiKey()) {
                 <input 
                   type="text"
-                  [(ngModel)]="apiKey"
+                  [ngModel]="apiKey()"
+                  (ngModelChange)="apiKey.set($event)"
                   placeholder="Enter your API key"
                 >
               } @else {
                 <input 
                   type="password"
-                  [(ngModel)]="apiKey"
+                  [ngModel]="apiKey()"
+                  (ngModelChange)="apiKey.set($event)"
                   placeholder="Enter your API key"
                 >
               }

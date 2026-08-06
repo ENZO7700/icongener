@@ -29,7 +29,8 @@
       <h2 class="section-title">{{ translate('description') }}</h2>
       <div class="form-group">
         <textarea 
-          [(ngModel)]="description"
+          [ngModel]="description()"
+          (ngModelChange)="description.set($event)"
           [placeholder]="translate('descriptionPlaceholder')"
           rows="3"
           [disabled]="isGenerating()"
@@ -45,7 +46,8 @@
           <label class="radio-label">
             <input 
               type="radio"
-              [(ngModel)]="faviconType"
+              [ngModel]="faviconType()"
+              (ngModelChange)="faviconType.set($event)"
               value="classic"
               [disabled]="isGenerating()"
             >
@@ -55,7 +57,8 @@
           <label class="radio-label">
             <input 
               type="radio"
-              [(ngModel)]="faviconType"
+              [ngModel]="faviconType()"
+              (ngModelChange)="faviconType.set($event)"
               value="modern"
               [disabled]="isGenerating()"
             >
@@ -74,7 +77,8 @@
             <div class="color-input">
               <input 
                 type="color"
-                [(ngModel)]="primaryColor"
+                [ngModel]="primaryColor()"
+                (ngModelChange)="primaryColor.set($event)"
                 [disabled]="isGenerating()"
               >
               <span class="color-value">{{ primaryColor() }}</span>
@@ -85,7 +89,8 @@
             <div class="color-input">
               <input 
                 type="color"
-                [(ngModel)]="secondaryColor"
+                [ngModel]="secondaryColor()"
+                (ngModelChange)="secondaryColor.set($event)"
                 [disabled]="isGenerating()"
               >
               <span class="color-value">{{ secondaryColor() }}</span>
@@ -94,7 +99,7 @@
           <div class="color-option">
             <label>{{ translate('backgroundColor') }}</label>
             <div class="color-input">
-              <select [(ngModel)]="backgroundColor" [disabled]="isGenerating()">
+              <select [ngModel]="backgroundColor()" (ngModelChange)="backgroundColor.set($event)" [disabled]="isGenerating()">
                 <option value="transparent">{{ translate('transparent') }}</option>
                 <option value="#1a1a2e">Dark Blue</option>
                 <option value="#ffffff">White</option>

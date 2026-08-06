@@ -29,7 +29,8 @@
       <h2 class="section-title">{{ translate('description') }}</h2>
       <div class="form-group">
         <textarea 
-          [(ngModel)]="description"
+          [ngModel]="description()"
+          (ngModelChange)="description.set($event)"
           [placeholder]="translate('descriptionPlaceholder')"
           rows="4"
           [disabled]="isGenerating()"
@@ -85,7 +86,8 @@
           <div class="color-input">
             <input 
               type="color"
-              [(ngModel)]="primaryColor"
+              [ngModel]="primaryColor()"
+              (ngModelChange)="primaryColor.set($event)"
               [disabled]="isGenerating()"
             >
             <span class="color-value">{{ primaryColor() }}</span>
@@ -96,7 +98,8 @@
           <div class="color-input">
             <input 
               type="color"
-              [(ngModel)]="secondaryColor"
+              [ngModel]="secondaryColor()"
+              (ngModelChange)="secondaryColor.set($event)"
               [disabled]="isGenerating()"
             >
             <span class="color-value">{{ secondaryColor() }}</span>
@@ -107,7 +110,8 @@
           <div class="color-input">
             <input 
               type="color"
-              [(ngModel)]="backgroundColor"
+              [ngModel]="backgroundColor()"
+              (ngModelChange)="backgroundColor.set($event)"
               [disabled]="isGenerating()"
             >
             <span class="color-value">{{ backgroundColor() }}</span>

@@ -143,7 +143,8 @@
           <div class="slider-group">
             <input 
               type="range"
-              [(ngModel)]="colorQuantization"
+              [ngModel]="colorQuantization()"
+              (ngModelChange)="colorQuantization.set($event)"
               min="1"
               max="64"
               [disabled]="isGenerating()"
@@ -159,7 +160,8 @@
           <div class="slider-group">
             <input 
               type="range"
-              [(ngModel)]="pixelSize"
+              [ngModel]="pixelSize()"
+              (ngModelChange)="pixelSize.set($event)"
               min="1"
               max="50"
               [disabled]="isGenerating()"
@@ -177,7 +179,8 @@
           <label class="checkbox-label">
             <input 
               type="checkbox"
-              [(ngModel)]="useInlineStyles"
+              [ngModel]="useInlineStyles()"
+              (ngModelChange)="useInlineStyles.set($event)"
               [disabled]="isGenerating()"
             >
             <span class="checkbox-custom"></span>
@@ -191,7 +194,8 @@
           <label class="checkbox-label">
             <input 
               type="checkbox"
-              [(ngModel)]="includeComments"
+              [ngModel]="includeComments()"
+              (ngModelChange)="includeComments.set($event)"
               [disabled]="isGenerating()"
             >
             <span class="checkbox-custom"></span>

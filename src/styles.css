@@ -17,15 +17,17 @@
   --breakpoint-xl: 1280px;
   --breakpoint-2xl: 1536px;
 
-  /* Colors */
+  /* Colors - macOS Sequoia Palette */
   --color-primary: #00d4ff;
   --color-secondary: #10b981;
   --color-accent: #8b5cf6;
-  --color-background: #1a202c;
-  --color-surface: #2d3748;
-  --color-text: #e2e8f0;
-  --color-text-secondary: #a0aec0;
-  --color-border: #4a5568;
+  --color-background: #0f172a;
+  --color-surface: #1e293b;
+  --color-sidebar: #18181b;
+  --color-sidebar-surface: #27272a;
+  --color-text: #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-border: rgba(255, 255, 255, 0.08);
 
   /* Spacing (8px grid system) */
   --spacing-xs: 4px;

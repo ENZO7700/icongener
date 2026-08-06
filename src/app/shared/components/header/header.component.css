@@ -1,9 +1,9 @@
 .header {
   height: 64px;
-  background: rgba(22, 33, 62, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  color: #e0e0e0;
+  background: rgba(24, 24, 27, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  color: #f8fafc;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -16,6 +16,41 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
   transition: transform 0.3s ease, left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* macOS Traffic Lights */
+.macos-traffic-lights {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 12px;
+}
+
+.traffic-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.traffic-dot.dot-close {
+  background-color: #ff5f56;
+  border: 1px solid #e0443e;
+}
+
+.traffic-dot.dot-minimize {
+  background-color: #ffbd2e;
+  border: 1px solid #dea123;
+}
+
+.traffic-dot.dot-expand {
+  background-color: #27c93f;
+  border: 1px solid #1aab29;
+}
+
+.macos-traffic-lights:hover .traffic-dot {
+  opacity: 0.85;
 }
 
 /* Auto-hide header on scroll down */

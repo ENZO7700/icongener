@@ -14,7 +14,7 @@ import { ToastService, ToastContainerComponent } from '../../core/services/toast
 export class SettingsComponent implements OnInit {
   // State
   language = signal<'en' | 'sk'>('en');
-  theme = signal<'dark' | 'light'>('dark');
+  theme = signal<'dark' | 'light' | 'system'>('dark');
   apiKey = signal<string>('');
   showApiKey = signal<boolean>(false);
   
@@ -31,7 +31,7 @@ export class SettingsComponent implements OnInit {
     }
     
     const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark' || savedTheme === 'light') {
+    if (savedTheme === 'dark' || savedTheme === 'light' || savedTheme === 'system') {
       this.theme.set(savedTheme);
     }
     
@@ -110,12 +110,137 @@ export class SettingsComponent implements OnInit {
   }
   
   // Set theme
-  setTheme(theme: 'dark' | 'light'): void {
+  setTheme(theme: 'dark' | 'light' | 'system'): void {
     this.theme.set(theme);
   }
   
-  // Get version
+  // Compatibility getters/setters for tests
+  get selectedLanguage(): string {
+    return this.language();
+  }
+  set selectedLanguage(val: 'en' | 'sk') {
+    this.language.set(val);
+  }
+
+  get selectedTheme(): string {
+    return this.theme();
+  }
+  set selectedTheme(val: 'dark' | 'light' | 'system') {
+    this.theme.set(val);
+  }
+
+  languages = ['en', 'sk'];
+  themes = ['light', 'dark', 'system'];
+
+  additionalSettings = [
+    { name: 'Auto-save', description: 'Automatically save changes', enabled: true }
+  ];
+
+  onLanguageChange(): void {
+    localStorage.setItem('language', this.language());
+    this.applyLanguage();
+  }
+
+  onThemeChange(): void {
+    localStorage.setItem('theme', this.theme());
+    this.applyTheme();
+  }
+
+  applyLanguage(): void {
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('lang', this.language());
+    }
+  }
+
+  getCurrentLanguage(): string {
+    return this.language();
+  }
+
+  getCurrentTheme(): string {
+    return this.theme();
+  }
+
+  isDarkMode(): boolean {
+    return this.theme() === 'dark';
+  }
+
+  getThemeClass(): string {
+    return `${this.theme()}-theme`;
+  }
+
+  getLanguageLabel(lang: string): string {
+    return lang === 'sk' ? 'Slovenský' : 'English';
+  }
+
+  getThemeLabel(theme: string): string {
+    if (theme === 'light') return 'Light';
+    if (theme === 'dark') return 'Dark';
+    return 'System';
+  }
+
+  toggleSetting(index: number): void {
+    if (this.additionalSettings[index]) {
+      this.additionalSettings[index].enabled = !this.additionalSettings[index].enabled;
+    }
+  }
+
+  getBuildDate(): string {
+    return '2026-08-06';
+  }
+
+  checkForUpdates(): void {
+    this.toastService.info('Checking for updates...');
+  }
+
+  exportSettings(): void {
+    this.downloadJson({ language: this.language(), theme: this.theme() }, 'icongener-settings.json');
+  }
+
+  importSettings(event: any): void {
+    const file = event.target?.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          this.processImportedSettings(parsed);
+        } catch {
+          this.toastService.error('Invalid settings file');
+        }
+      };
+      reader.readAsText(file);
+    }
+  }
+
+  processImportedSettings(settings: any): void {
+    if (settings?.language === 'en' || settings?.language === 'sk') {
+      this.selectedLanguage = settings.language;
+    } else {
+      this.selectedLanguage = 'en';
+    }
+    if (settings?.theme === 'dark' || settings?.theme === 'light') {
+      this.selectedTheme = settings.theme;
+    } else {
+      this.selectedTheme = 'dark';
+    }
+    this.saveSettings();
+  }
+
+  downloadJson(data: any, filename: string): void {
+    const jsonStr = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   getVersion(): string {
     return '1.0.0';
   }
 }
+

@@ -16,7 +16,7 @@
     @for (stat of quickStats(); track stat.label.en) {
       <div class="stat-card">
         <div class="stat-icon" [style.background]="'rgba(' + hexToRgb(stat.color) + ', 0.1)'">
-          <span [innerHTML]="stat.icon"></span>
+          <span [innerHTML]="getSafeIcon(stat.icon)"></span>
         </div>
         <div class="stat-content">
           <div class="stat-value">{{ stat.value }}</div>
@@ -31,7 +31,7 @@
     @for (card of featureCards(); track card.id) {
       <a [routerLink]="card.route" class="feature-card" [style.border-color]="card.color">
         <div class="card-icon" [style.background]="'rgba(' + hexToRgb(card.color) + ', 0.1)'">
-          <span [innerHTML]="card.icon"></span>
+          <span [innerHTML]="getSafeIcon(card.icon)"></span>
         </div>
         <div class="card-content">
           <h3 class="card-title">{{ getTitle(card) }}</h3>

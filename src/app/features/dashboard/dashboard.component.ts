@@ -2,6 +2,8 @@ import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -121,8 +123,16 @@ export class DashboardComponent implements OnInit {
   
   // Injected services
   private router = inject(Router);
+  private sanitizer = inject(DomSanitizer);
   
-  constructor() {}
+  private safeIconCache = new Map<string, SafeHtml>();
+
+  getSafeIcon(svg: string): SafeHtml {
+    if (!this.safeIconCache.has(svg)) {
+      this.safeIconCache.set(svg, this.sanitizer.bypassSecurityTrustHtml(svg));
+    }
+    return this.safeIconCache.get(svg)!;
+  }
   
   hexToRgb(hex: string): string {
     const normalized = hex.replace('#', '');

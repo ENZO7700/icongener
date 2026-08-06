@@ -144,12 +144,19 @@ export class HistoryComponent implements OnInit {
   // Select item
   selectItem(item: HistoryItem): void {
     this.selectedItem.set(item);
+    if (typeof document !== 'undefined') {
+      document.body.classList.add('body-scroll-lock');
+    }
   }
   
   // Close details
   closeDetails(): void {
     this.selectedItem.set(null);
+    if (typeof document !== 'undefined') {
+      document.body.classList.remove('body-scroll-lock');
+    }
   }
+
   
   // Download item
   downloadItem(item: HistoryItem): void {

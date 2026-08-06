@@ -162,8 +162,11 @@ export class IconGeneratorService {
    * Replace colors in SVG code
    */
   private replaceColors(svgCode: string, primaryColor: string, secondaryColor: string): string {
-    // Simple color replacement - in a real app, you might want a more sophisticated approach
-    return svgCode;
+    let replaced = svgCode;
+    // Replace hardcoded mock/placeholder colors with user-selected primary and secondary colors
+    replaced = replaced.replace(/#00d4ff/gi, primaryColor);
+    replaced = replaced.replace(/#ffffff/gi, secondaryColor);
+    return replaced;
   }
   
   /**

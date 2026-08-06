@@ -68,4 +68,9 @@ describe('DownloadService', () => {
 
     expect(spy).toHaveBeenCalledWith(link.href);
   });
+
+  it('should have rasterizeSvgToPng method', () => {
+    expect(service.rasterizeSvgToPng).toBeDefined();
+    expect(typeof service.rasterizeSvgToPng).toBe('function');
+  });
 });

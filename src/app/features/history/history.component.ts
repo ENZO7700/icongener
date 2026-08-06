@@ -26,6 +26,7 @@ export class HistoryComponent implements OnInit {
   language = signal<'en' | 'sk'>('en');
   historyItems = signal<HistoryItem[]>([]);
   selectedItem = signal<HistoryItem | null>(null);
+  selectedIds = signal<Set<string>>(new Set());
   searchQuery = signal<string>('');
   selectedType = signal<string>('all');
   
@@ -206,5 +207,61 @@ export class HistoryComponent implements OnInit {
   // Set type filter
   setType(type: string): void {
     this.selectedType.set(type);
+  }
+
+  // Batch selection helpers
+  toggleSelect(id: string): void {
+    this.selectedIds.update(set => {
+      const next = new Set(set);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  toggleSelectAll(): void {
+    const items = this.filteredItems();
+    if (this.selectedIds().size === items.length) {
+      this.selectedIds.set(new Set());
+    } else {
+      this.selectedIds.set(new Set(items.map(i => i.id)));
+    }
+  }
+
+  async downloadSelectedZip(): Promise<void> {
+    const selected = this.historyItems().filter(i => this.selectedIds().has(i.id));
+    if (!selected.length) {
+      this.toastService.error('No items selected');
+      return;
+    }
+
+    try {
+      const files: { name: string; content: string; type: string }[] = [];
+      for (const item of selected) {
+        if (item.data?.htmlCode) {
+          files.push({
+            name: `${item.name.replace(/\s+/g, '-').toLowerCase()}-${item.id}.html`,
+            content: item.data.htmlCode,
+            type: 'text/html'
+          });
+        } else if (item.data?.svgCode) {
+          files.push({
+            name: `${item.name.replace(/\s+/g, '-').toLowerCase()}-${item.id}.svg`,
+            content: item.data.svgCode,
+            type: 'image/svg+xml'
+          });
+        }
+      }
+
+      if (files.length) {
+        await this.downloadService.downloadZip(files);
+        this.toastService.success('Selected items downloaded as ZIP!');
+      } else {
+        this.toastService.error('No downloadable code found for selected items');
+      }
+    } catch (e) {
+      console.error('Error downloading zip:', e);
+      this.toastService.error('Failed to export ZIP');
+    }
   }
 }

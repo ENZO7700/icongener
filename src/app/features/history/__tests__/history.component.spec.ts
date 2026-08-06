@@ -227,4 +227,37 @@ describe('HistoryComponent', () => {
     const formatted = component.formatDate(ts);
     expect(formatted).toBeTruthy();
   });
+
+  // ─── Batch Selection ──────────────────────────────────────────────
+
+  it('should toggle selection for an item', () => {
+    component.toggleSelect('item1');
+    expect(component.selectedIds().has('item1')).toBe(true);
+
+    component.toggleSelect('item1');
+    expect(component.selectedIds().has('item1')).toBe(false);
+  });
+
+  it('should toggle select all items', () => {
+    const item1: HistoryItem = { id: '1', type: 'icon', name: 'Item 1', preview: '', data: {}, timestamp: Date.now() };
+    const item2: HistoryItem = { id: '2', type: 'icon', name: 'Item 2', preview: '', data: {}, timestamp: Date.now() };
+    component.historyItems.set([item1, item2]);
+
+    component.toggleSelectAll();
+    expect(component.selectedIds().size).toBe(2);
+
+    component.toggleSelectAll();
+    expect(component.selectedIds().size).toBe(0);
+  });
+
+  it('should export selected items as ZIP', async () => {
+    const item1: HistoryItem = { id: '1', type: 'icon', name: 'Icon 1', preview: '', data: { svgCode: '<svg></svg>' }, timestamp: Date.now() };
+    component.historyItems.set([item1]);
+    component.toggleSelect('1');
+
+    await component.downloadSelectedZip();
+
+    expect(downloadServiceSpy.downloadZip).toHaveBeenCalled();
+    expect(toastServiceSpy.success).toHaveBeenCalledWith('Selected items downloaded as ZIP!');
+  });
 });

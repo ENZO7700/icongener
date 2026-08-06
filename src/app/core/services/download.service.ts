@@ -51,6 +51,49 @@ export class DownloadService {
     const zipBlob = await zip.generateAsync({ type: 'blob' });
     this.downloadBlob(zipBlob, 'download.zip');
   }
+
+  /**
+   * Rasterize an SVG string to a high-resolution PNG Blob (supports up to 4K: 4096x4096px)
+   */
+  rasterizeSvgToPng(svgCode: string, width: number = 1024, height: number = 1024): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const svgBlob = new Blob([svgCode], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          URL.revokeObjectURL(url);
+          reject(new Error('Could not get canvas context'));
+          return;
+        }
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob((blob) => {
+          URL.revokeObjectURL(url);
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('Canvas rasterization failed'));
+          }
+        }, 'image/png');
+      };
+
+      img.onerror = (err) => {
+        URL.revokeObjectURL(url);
+        reject(err);
+      };
+
+      img.src = url;
+    });
+  }
   
   /**
    * Get a safe URL for an SVG

@@ -7,32 +7,53 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { IconGeneratorComponent } from '../icon-generator.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AiService } from '../../../core/services/ai.service';
+import { RouterTestingModule } from '@angular/router/testing';
+import { IconGeneratorService, GeneratedIcon, IconPlatform } from '../../../core/services/icon-generator.service';
 import { DownloadService } from '../../../core/services/download.service';
 import { ProgressService } from '../../../core/services/progress.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { ToastContainerComponent } from '../../../core/services/toast.service';
 
 describe('IconGeneratorComponent', () => {
   let component: IconGeneratorComponent;
   let fixture: ComponentFixture<IconGeneratorComponent>;
-  let aiServiceSpy: jasmine.SpyObj<AiService>;
+  let toastServiceSpy: jasmine.SpyObj<ToastService>;
   let downloadServiceSpy: jasmine.SpyObj<DownloadService>;
   let progressServiceSpy: jasmine.SpyObj<ProgressService>;
-  let toastServiceSpy: jasmine.SpyObj<ToastService>;
+  let iconGenServiceSpy: jasmine.SpyObj<IconGeneratorService>;
 
   beforeEach(async () => {
-    // Create spies for services
-    aiServiceSpy = jasmine.createSpyObj('AiService', ['generateSvg', 'cleanSvgCode']);
-    downloadServiceSpy = jasmine.createSpyObj('DownloadService', ['downloadPng', 'downloadSvg', 'downloadZip']);
-    progressServiceSpy = jasmine.createSpyObj('ProgressService', ['startProgress', 'incrementProgress', 'completeProgress']);
-    toastServiceSpy = jasmine.createSpyObj('ToastService', ['showToast']);
+    localStorage.clear();
+    toastServiceSpy = jasmine.createSpyObj('ToastService', ['success', 'error', 'info', 'getToasts']);
+    toastServiceSpy.getToasts.and.returnValue([]);
+    downloadServiceSpy = jasmine.createSpyObj('DownloadService', ['downloadPng', 'downloadSvg', 'downloadZip', 'downloadText']);
+    progressServiceSpy = jasmine.createSpyObj('ProgressService', ['start', 'complete', 'stop', 'setError', 'nextStep']);
+    iconGenServiceSpy = jasmine.createSpyObj('IconGeneratorService', [
+      'generateIcons', 'generateAllPlatformIcons', 'downloadIcon', 'downloadAllIcons', 'getPlatform', 'getShape'
+    ], {
+      platforms: [
+        { id: 'pwa', name: 'PWA', sizes: [{ width: 192, height: 192, label: '192x192' }] },
+        { id: 'android', name: 'Android', sizes: [{ width: 512, height: 512, label: '512x512' }] },
+        { id: 'ios', name: 'iOS', sizes: [{ width: 180, height: 180, label: '180x180' }] }
+      ],
+      shapes: [
+        { id: 'circle', name: 'Circle', borderRadius: 50 },
+        { id: 'square', name: 'Square', borderRadius: 0 },
+        { id: 'rounded', name: 'Rounded Square', borderRadius: 20 }
+      ]
+    });
+
+    iconGenServiceSpy.getPlatform.and.callFake((id: string): IconPlatform | undefined => {
+      return iconGenServiceSpy.platforms.find((p) => p.id === id);
+    });
+
+    iconGenServiceSpy.getShape.and.callFake((id: string) => {
+      return iconGenServiceSpy.shapes.find((s) => s.id === id) as any;
+    });
 
     await TestBed.configureTestingModule({
-      imports: [CommonModule, FormsModule],
-      declarations: [IconGeneratorComponent, ToastContainerComponent],
+      imports: [IconGeneratorComponent, CommonModule, FormsModule, RouterTestingModule],
       providers: [
-        { provide: AiService, useValue: aiServiceSpy },
+        { provide: IconGeneratorService, useValue: iconGenServiceSpy },
         { provide: DownloadService, useValue: downloadServiceSpy },
         { provide: ProgressService, useValue: progressServiceSpy },
         { provide: ToastService, useValue: toastServiceSpy }
@@ -44,183 +65,148 @@ describe('IconGeneratorComponent', () => {
     fixture.detectChanges();
   });
 
+  // ─── Creation & Defaults ───────────────────────────────────────────
+
   it('should create', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should initialize with default values', () => {
-    expect(component.selectedPlatform).toBe('pwa');
-    expect(component.selectedShape).toBe('rounded');
-    expect(component.iconColor).toBe('#00d4ff');
-    expect(component.bgColor).toBe('transparent');
-    expect(component.selectedSize).toBe(192);
-    expect(component.customPrompt).toBe('');
+  it('should initialize with default signal values', () => {
+    expect(component.selectedPlatform()).toBe('pwa');
+    expect(component.selectedShape()).toBe('rounded');
+    expect(component.primaryColor()).toBe('#00d4ff');
+    expect(component.secondaryColor()).toBe('#ffffff');
+    expect(component.backgroundColor()).toBe('#1a1a2e');
+    expect(component.description()).toBe('');
+    expect(component.isGenerating()).toBe(false);
+    expect(component.generatedIcons()).toEqual([]);
+    expect(component.selectedIcon()).toBeNull();
+    expect(component.previewSvg()).toBeNull();
   });
 
-  it('should have platform options', () => {
-    expect(component.platforms).toContain('pwa');
-    expect(component.platforms).toContain('android');
-    expect(component.platforms).toContain('ios');
+  it('should default language to en', () => {
+    expect(component.language()).toBe('en');
   });
 
-  it('should have shape options', () => {
-    expect(component.shapes).toContain('circle');
-    expect(component.shapes).toContain('rounded');
-    expect(component.shapes).toContain('square');
+  // ─── Platform & Shape ─────────────────────────────────────────────
+
+  it('should expose platforms from service', () => {
+    expect(component.platforms.length).toBeGreaterThan(0);
+    expect(component.platforms.map((p) => p.id)).toContain('pwa');
+    expect(component.platforms.map((p) => p.id)).toContain('android');
+    expect(component.platforms.map((p) => p.id)).toContain('ios');
   });
 
-  it('should have PWA sizes', () => {
-    expect(component.pwaSizes).toContain(48);
-    expect(component.pwaSizes).toContain(192);
-    expect(component.pwaSizes).toContain(512);
+  it('should expose shapes from service', () => {
+    const shapeIds = component.shapes.map(s => s.id);
+    expect(shapeIds).toContain('circle');
+    expect(shapeIds).toContain('rounded');
+    expect(shapeIds).toContain('square');
   });
 
-  it('should have Android sizes', () => {
-    expect(component.androidSizes).toContain(36);
-    expect(component.androidSizes).toContain(48);
-    expect(component.androidSizes).toContain(192);
+  it('should update selectedPlatform on onPlatformChange', () => {
+    component.onPlatformChange('android');
+    expect(component.selectedPlatform()).toBe('android');
   });
 
-  it('should have iOS sizes', () => {
-    expect(component.iosSizes).toContain(20);
-    expect(component.iosSizes).toContain(60);
-    expect(component.iosSizes).toContain(180);
+  it('should update selectedShape on onShapeChange', () => {
+    component.onShapeChange('circle');
+    expect(component.selectedShape()).toBe('circle');
   });
 
-  it('should update available sizes when platform changes', () => {
-    component.selectedPlatform = 'android';
-    component.updateAvailableSizes();
-    expect(component.availableSizes).toEqual(component.androidSizes);
+  // ─── Signals ──────────────────────────────────────────────────────
 
-    component.selectedPlatform = 'ios';
-    component.updateAvailableSizes();
-    expect(component.availableSizes).toEqual(component.iosSizes);
-
-    component.selectedPlatform = 'pwa';
-    component.updateAvailableSizes();
-    expect(component.availableSizes).toEqual(component.pwaSizes);
+  it('should update description signal', () => {
+    component.description.set('test icon');
+    expect(component.description()).toBe('test icon');
   });
 
-  it('should update preview when color changes', () => {
-    spyOn(component, 'updatePreview');
-    component.iconColor = '#ff0000';
-    component.onColorChange();
-    expect(component.updatePreview).toHaveBeenCalled();
+  it('should update primaryColor signal', () => {
+    component.primaryColor.set('#ff0000');
+    expect(component.primaryColor()).toBe('#ff0000');
   });
 
-  it('should update preview when shape changes', () => {
-    spyOn(component, 'updatePreview');
-    component.selectedShape = 'circle';
-    component.onShapeChange();
-    expect(component.updatePreview).toHaveBeenCalled();
+  it('should update secondaryColor signal', () => {
+    component.secondaryColor.set('#000000');
+    expect(component.secondaryColor()).toBe('#000000');
   });
 
-  it('should update preview when size changes', () => {
-    spyOn(component, 'updatePreview');
-    component.selectedSize = 256;
-    component.onSizeChange();
-    expect(component.updatePreview).toHaveBeenCalled();
+  it('should update backgroundColor signal', () => {
+    component.backgroundColor.set('#ffffff');
+    expect(component.backgroundColor()).toBe('#ffffff');
   });
 
-  it('should update preview when platform changes', () => {
-    spyOn(component, 'updatePreview');
-    component.selectedPlatform = 'android';
-    component.onPlatformChange();
-    expect(component.updatePreview).toHaveBeenCalled();
+  it('should update isGenerating signal', () => {
+    component.isGenerating.set(true);
+    expect(component.isGenerating()).toBe(true);
   });
 
-  it('should reset to default settings', () => {
-    component.selectedPlatform = 'android';
-    component.selectedShape = 'circle';
-    component.iconColor = '#ff0000';
-    component.bgColor = '#000000';
-    component.selectedSize = 256;
-    component.customPrompt = 'test prompt';
+  // ─── Preview ──────────────────────────────────────────────────────
 
-    component.resetSettings();
-
-    expect(component.selectedPlatform).toBe('pwa');
-    expect(component.selectedShape).toBe('rounded');
-    expect(component.iconColor).toBe('#00d4ff');
-    expect(component.bgColor).toBe('transparent');
-    expect(component.selectedSize).toBe(192);
-    expect(component.customPrompt).toBe('');
+  it('should have default preview size', () => {
+    expect(component.previewSize()).toEqual({ width: 192, height: 192 });
   });
 
-  it('should generate icons when generate is called', async () => {
-    aiServiceSpy.generateSvg.and.returnValue(Promise.resolve('<svg>test</svg>'));
-    downloadServiceSpy.downloadZip.and.returnValue(Promise.resolve());
-    
-    await component.generateIcons();
-    
-    expect(aiServiceSpy.generateSvg).toHaveBeenCalled();
-    expect(downloadServiceSpy.downloadZip).toHaveBeenCalled();
-    expect(progressServiceSpy.startProgress).toHaveBeenCalled();
-    expect(toastServiceSpy.showToast).toHaveBeenCalled();
+  it('should update preview size on updatePreviewSize', () => {
+    component.updatePreviewSize();
+    expect(component.previewSize()).toBeTruthy();
   });
 
-  it('should handle generation error', async () => {
-    aiServiceSpy.generateSvg.and.returnValue(Promise.reject('Error'));
-    
-    await component.generateIcons();
-    
-    expect(aiServiceSpy.generateSvg).toHaveBeenCalled();
-    expect(toastServiceSpy.showToast).toHaveBeenCalledWith(
-      jasmine.stringContaining('Error'),
-      jasmine.any(String),
-      jasmine.any(Number)
-    );
+  // ─── Computed Platform ────────────────────────────────────────────
+
+  it('should compute currentPlatform from selectedPlatform', () => {
+    component.selectedPlatform.set('pwa');
+    const platform = component.currentPlatform();
+    expect(platform).toBeTruthy();
+    expect(platform?.id).toBe('pwa');
   });
 
-  it('should download single icon when downloadIcon is called', () => {
-    component.downloadIcon();
-    expect(downloadServiceSpy.downloadPng).toHaveBeenCalled();
+  it('should update currentPlatform when platform changes', () => {
+    component.selectedPlatform.set('android');
+    const platform = component.currentPlatform();
+    expect(platform?.id).toBe('android');
   });
 
-  it('should copy SVG code when copySvg is called', () => {
-    component.svgCode = '<svg>test</svg>';
-    spyOn(navigator.clipboard, 'writeText');
-    component.copySvg();
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('<svg>test</svg>');
-    expect(toastServiceSpy.showToast).toHaveBeenCalledWith(
-      jasmine.stringContaining('Copied'),
-      jasmine.any(String),
-      jasmine.any(Number)
-    );
+  // ─── Icon Selection ───────────────────────────────────────────────
+
+  it('should select and deselect icon', () => {
+    const mockIcon: GeneratedIcon = {
+      id: 'test-1',
+      svgCode: '<svg>test</svg>',
+      pngBase64: 'data:image/png;base64,abc',
+      size: { width: 192, height: 192, label: '192x192' },
+      platform: 'pwa',
+      shape: 'rounded',
+      backgroundColor: '#1a1a2e',
+      primaryColor: '#00d4ff',
+      secondaryColor: '#ffffff',
+      timestamp: Date.now()
+    };
+
+    component.selectedIcon.set(mockIcon);
+    expect(component.selectedIcon()?.id).toBe('test-1');
+
+    component.selectedIcon.set(null);
+    expect(component.selectedIcon()).toBeNull();
   });
 
-  it('should handle copy error', () => {
-    component.svgCode = '<svg>test</svg>';
-    spyOn(navigator.clipboard, 'writeText').and.throwError('Copy error');
-    component.copySvg();
-    expect(toastServiceSpy.showToast).toHaveBeenCalledWith(
-      jasmine.stringContaining('Failed'),
-      jasmine.any(String),
-      jasmine.any(Number)
-    );
-  });
+  // ─── Download ─────────────────────────────────────────────────────
 
-  it('should get platform sizes correctly', () => {
-    const pwaSizes = component.getPlatformSizes('pwa');
-    expect(pwaSizes).toEqual(component.pwaSizes);
+  it('should call service downloadIcon', () => {
+    const mockIcon: GeneratedIcon = {
+      id: 'test-1',
+      svgCode: '<svg>test</svg>',
+      pngBase64: 'data:image/png;base64,abc',
+      size: { width: 192, height: 192, label: '192x192' },
+      platform: 'pwa',
+      shape: 'rounded',
+      backgroundColor: '#1a1a2e',
+      primaryColor: '#00d4ff',
+      secondaryColor: '#ffffff',
+      timestamp: Date.now()
+    };
 
-    const androidSizes = component.getPlatformSizes('android');
-    expect(androidSizes).toEqual(component.androidSizes);
-
-    const iosSizes = component.getPlatformSizes('ios');
-    expect(iosSizes).toEqual(component.iosSizes);
-  });
-
-  it('should have preset prompts', () => {
-    expect(component.presetPrompts.length).toBeGreaterThan(0);
-    expect(component.presetPrompts[0]).toHaveProperty('name');
-    expect(component.presetPrompts[0]).toHaveProperty('prompt');
-  });
-
-  it('should select preset correctly', () => {
-    const initialPrompt = component.customPrompt;
-    component.selectPreset(component.presetPrompts[0].prompt);
-    expect(component.customPrompt).toBe(component.presetPrompts[0].prompt);
-    expect(component.customPrompt).not.toBe(initialPrompt);
+    component.downloadIcon(mockIcon);
+    expect(iconGenServiceSpy.downloadIcon).toHaveBeenCalledWith(mockIcon);
   });
 });

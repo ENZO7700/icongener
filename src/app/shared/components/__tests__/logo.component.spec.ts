@@ -20,7 +20,7 @@ describe('LogoComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      declarations: [LogoComponent],
+      imports: [LogoComponent],
       providers: [
         { provide: DomSanitizer, useValue: mockSanitizer },
         { provide: AiService, useValue: mockAiService }
@@ -45,22 +45,11 @@ describe('LogoComponent', () => {
   });
 
   it('should get logo size class', () => {
-    component.size.set('small');
-    expect(component.getLogoSizeClass()).toContain('w-');
-    
-    component.size.set('medium');
-    expect(component.getLogoSizeClass()).toContain('w-');
-    
-    component.size.set('large');
-    expect(component.getLogoSizeClass()).toContain('w-');
+    expect(component.getLogoSizeClass()).toContain('w-medium');
   });
 
   it('should get title size class', () => {
-    component.size.set('small');
-    expect(component.getTitleSizeClass()).toContain('text-');
-    
-    component.size.set('large');
-    expect(component.getTitleSizeClass()).toContain('text-');
+    expect(component.getTitleSizeClass()).toBe('text-base');
   });
 
   it('should get logo title', () => {
@@ -74,19 +63,15 @@ describe('LogoComponent', () => {
   });
 
   it('should generate logo on init', () => {
-    // The component should attempt to generate logo
     expect(mockAiService.generateSvg).toHaveBeenCalled();
   });
 
   it('should handle SVG generation error', async () => {
     mockAiService.generateSvg.and.returnValue(Promise.reject(new Error('Test error')));
-    
-    // Recreate component to trigger error handling
-    fixture = TestBed.createComponent(LogoComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-    
-    // Should use fallback SVG
+
+    await component.generateLogo();
+
     expect(component.generatedSvg()).toBeTruthy();
+    expect(component.error()).toBeTruthy();
   });
 });

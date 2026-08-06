@@ -4,12 +4,12 @@
  */
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { HistoryComponent } from '../history.component';
+import { HistoryComponent, HistoryItem } from '../history.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterTestingModule } from '@angular/router/testing';
 import { DownloadService } from '../../../core/services/download.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { ToastContainerComponent } from '../../../core/services/toast.service';
 
 describe('HistoryComponent', () => {
   let component: HistoryComponent;
@@ -18,13 +18,13 @@ describe('HistoryComponent', () => {
   let toastServiceSpy: jasmine.SpyObj<ToastService>;
 
   beforeEach(async () => {
-    // Create spies for services
-    downloadServiceSpy = jasmine.createSpyObj('DownloadService', ['downloadPng', 'downloadSvg', 'downloadZip']);
-    toastServiceSpy = jasmine.createSpyObj('ToastService', ['showToast']);
+    localStorage.clear();
+    downloadServiceSpy = jasmine.createSpyObj('DownloadService', ['downloadPng', 'downloadSvg', 'downloadText', 'downloadZip']);
+    toastServiceSpy = jasmine.createSpyObj('ToastService', ['success', 'error', 'info', 'getToasts']);
+    toastServiceSpy.getToasts.and.returnValue([]);
 
     await TestBed.configureTestingModule({
-      imports: [CommonModule, FormsModule],
-      declarations: [HistoryComponent, ToastContainerComponent],
+      imports: [HistoryComponent, CommonModule, FormsModule, RouterTestingModule],
       providers: [
         { provide: DownloadService, useValue: downloadServiceSpy },
         { provide: ToastService, useValue: toastServiceSpy }
@@ -36,225 +36,195 @@ describe('HistoryComponent', () => {
     fixture.detectChanges();
   });
 
+  // ─── Creation & Defaults ───────────────────────────────────────────
+
   it('should create', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should initialize with empty history if localStorage is empty', () => {
-    spyOn(localStorage, 'getItem').and.returnValue(null);
-    component = TestBed.createComponent(HistoryComponent).componentInstance;
-    expect(component.historyItems).toEqual([]);
+  it('should initialize with empty history by default', () => {
+    expect(component.historyItems()).toEqual([]);
+    expect(component.selectedItem()).toBeNull();
+    expect(component.searchQuery()).toBe('');
+    expect(component.selectedType()).toBe('all');
   });
+
+  it('should default language to en', () => {
+    expect(component.language()).toBe('en');
+  });
+
+  // ─── Translation ──────────────────────────────────────────────────
+
+  it('should translate keys in English', () => {
+    component.language.set('en');
+    expect(component.translate('history')).toBe('History');
+    expect(component.translate('clearHistory')).toBe('Clear History');
+  });
+
+  it('should translate keys in Slovak', () => {
+    component.language.set('sk');
+    expect(component.translate('history')).toBe('História');
+    expect(component.translate('clearHistory')).toBe('Vymazať históriu');
+  });
+
+  it('should return key for unknown translation', () => {
+    expect(component.translate('unknown_key')).toBe('unknown_key');
+  });
+
+  // ─── LocalStorage & Item Operations ───────────────────────────────
 
   it('should load history from localStorage', () => {
-    const mockHistory = [
-      { id: '1', type: 'icon', name: 'Test Icon', svg: '<svg>test</svg>', createdAt: Date.now() }
+    const mockItems: HistoryItem[] = [
+      { id: '1', type: 'icon', name: 'Test Icon', preview: '', data: {}, timestamp: Date.now() }
     ];
-    spyOn(localStorage, 'getItem').and.returnValue(JSON.stringify(mockHistory));
-    
-    component = TestBed.createComponent(HistoryComponent).componentInstance;
-    expect(component.historyItems.length).toBe(1);
-    expect(component.historyItems[0].name).toBe('Test Icon');
-  });
+    spyOn(localStorage, 'getItem').and.returnValue(JSON.stringify(mockItems));
 
-  it('should filter history by type', () => {
-    component.historyItems = [
-      { id: '1', type: 'icon', name: 'Icon 1', svg: '<svg>1</svg>', createdAt: Date.now() },
-      { id: '2', type: 'favicon', name: 'Favicon 1', svg: '<svg>2</svg>', createdAt: Date.now() },
-      { id: '3', type: 'banner', name: 'Banner 1', svg: '<svg>3</svg>', createdAt: Date.now() }
-    ];
-    
-    component.filterType = 'icon';
-    component.filterHistory();
-    
-    expect(component.filteredItems.length).toBe(1);
-    expect(component.filteredItems[0].type).toBe('icon');
-  });
-
-  it('should filter history by search text', () => {
-    component.historyItems = [
-      { id: '1', type: 'icon', name: 'Test Icon', svg: '<svg>1</svg>', createdAt: Date.now() },
-      { id: '2', type: 'icon', name: 'Another Icon', svg: '<svg>2</svg>', createdAt: Date.now() }
-    ];
-    
-    component.searchText = 'Test';
-    component.filterHistory();
-    
-    expect(component.filteredItems.length).toBe(1);
-    expect(component.filteredItems[0].name).toContain('Test');
-  });
-
-  it('should filter history by date range', () => {
-    const now = Date.now();
-    const yesterday = now - 86400000;
-    const lastWeek = now - 604800000;
-    
-    component.historyItems = [
-      { id: '1', type: 'icon', name: 'Recent', svg: '<svg>1</svg>', createdAt: now },
-      { id: '2', type: 'icon', name: 'Old', svg: '<svg>2</svg>', createdAt: lastWeek }
-    ];
-    
-    component.startDate = new Date(yesterday).toISOString().split('T')[0];
-    component.endDate = new Date(now).toISOString().split('T')[0];
-    component.filterHistory();
-    
-    expect(component.filteredItems.length).toBe(1);
-    expect(component.filteredItems[0].name).toBe('Recent');
-  });
-
-  it('should clear filters', () => {
-    component.filterType = 'icon';
-    component.searchText = 'test';
-    component.startDate = '2024-01-01';
-    component.endDate = '2024-12-31';
-    
-    component.clearFilters();
-    
-    expect(component.filterType).toBe('all');
-    expect(component.searchText).toBe('');
-    expect(component.startDate).toBe('');
-    expect(component.endDate).toBe('');
-  });
-
-  it('should delete history item', () => {
-    component.historyItems = [
-      { id: '1', type: 'icon', name: 'Icon 1', svg: '<svg>1</svg>', createdAt: Date.now() },
-      { id: '2', type: 'icon', name: 'Icon 2', svg: '<svg>2</svg>', createdAt: Date.now() }
-    ];
-    
-    spyOn(localStorage, 'setItem');
-    
-    component.deleteItem('1');
-    
-    expect(component.historyItems.length).toBe(1);
-    expect(component.historyItems[0].id).toBe('2');
-    expect(localStorage.setItem).toHaveBeenCalled();
-  });
-
-  it('should delete all history items', () => {
-    component.historyItems = [
-      { id: '1', type: 'icon', name: 'Icon 1', svg: '<svg>1</svg>', createdAt: Date.now() },
-      { id: '2', type: 'icon', name: 'Icon 2', svg: '<svg>2</svg>', createdAt: Date.now() }
-    ];
-    
-    spyOn(localStorage, 'setItem');
-    spyOn(window, 'confirm').and.returnValue(true);
-    
-    component.deleteAll();
-    
-    expect(component.historyItems.length).toBe(0);
-    expect(localStorage.setItem).toHaveBeenCalledWith('history', JSON.stringify([]));
-  });
-
-  it('should not delete all if user cancels', () => {
-    component.historyItems = [
-      { id: '1', type: 'icon', name: 'Icon 1', svg: '<svg>1</svg>', createdAt: Date.now() }
-    ];
-    
-    spyOn(localStorage, 'setItem');
-    spyOn(window, 'confirm').and.returnValue(false);
-    
-    component.deleteAll();
-    
-    expect(component.historyItems.length).toBe(1);
-    expect(localStorage.setItem).not.toHaveBeenCalled();
-  });
-
-  it('should download history item', () => {
-    component.historyItems = [
-      { id: '1', type: 'icon', name: 'Icon 1', svg: '<svg>test</svg>', createdAt: Date.now() }
-    ];
-    
-    component.downloadItem(component.historyItems[0]);
-    
-    expect(downloadServiceSpy.downloadSvg).toHaveBeenCalledWith('<svg>test</svg>', 'icon-1.svg');
-  });
-
-  it('should copy SVG to clipboard', () => {
-    const item = { id: '1', type: 'icon', name: 'Icon 1', svg: '<svg>test</svg>', createdAt: Date.now() };
-    
-    spyOn(navigator.clipboard, 'writeText');
-    component.copySvg(item);
-    
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('<svg>test</svg>');
-    expect(toastServiceSpy.showToast).toHaveBeenCalledWith(
-      jasmine.stringContaining('Copied'),
-      jasmine.any(String),
-      jasmine.any(Number)
-    );
-  });
-
-  it('should handle copy error', () => {
-    const item = { id: '1', type: 'icon', name: 'Icon 1', svg: '<svg>test</svg>', createdAt: Date.now() };
-    
-    spyOn(navigator.clipboard, 'writeText').and.throwError('Copy error');
-    component.copySvg(item);
-    
-    expect(toastServiceSpy.showToast).toHaveBeenCalledWith(
-      jasmine.stringContaining('Failed'),
-      jasmine.any(String),
-      jasmine.any(Number)
-    );
-  });
-
-  it('should export history as JSON', () => {
-    component.historyItems = [
-      { id: '1', type: 'icon', name: 'Icon 1', svg: '<svg>1</svg>', createdAt: Date.now() }
-    ];
-    
-    spyOn(component, 'downloadJson');
-    component.exportHistory();
-    
-    expect(component.downloadJson).toHaveBeenCalled();
-  });
-
-  it('should get history item type icon', () => {
-    const item = { type: 'icon' } as any;
-    expect(component.getItemIcon(item)).toContain('icon');
-  });
-
-  it('should get history item type favicon', () => {
-    const item = { type: 'favicon' } as any;
-    expect(component.getItemIcon(item)).toContain('favicon');
-  });
-
-  it('should get history item type banner', () => {
-    const item = { type: 'banner' } as any;
-    expect(component.getItemIcon(item)).toContain('banner');
-  });
-
-  it('should get history item type html', () => {
-    const item = { type: 'html' } as any;
-    expect(component.getItemIcon(item)).toContain('html');
-  });
-
-  it('should format date correctly', () => {
-    const date = new Date('2024-01-15T12:30:45');
-    const formatted = component.formatDate(date.getTime());
-    expect(formatted).toContain('2024');
-    expect(formatted).toContain('01');
-    expect(formatted).toContain('15');
+    component.loadHistory();
+    expect(component.historyItems()).toEqual(mockItems);
   });
 
   it('should save history to localStorage', () => {
     spyOn(localStorage, 'setItem');
-    component.historyItems = [
-      { id: '1', type: 'icon', name: 'Test', svg: '<svg>test</svg>', createdAt: Date.now() }
+    const mockItems: HistoryItem[] = [
+      { id: '1', type: 'icon', name: 'Test Icon', preview: '', data: {}, timestamp: Date.now() }
     ];
-    
+    component.historyItems.set(mockItems);
+
     component.saveHistory();
-    
-    expect(localStorage.setItem).toHaveBeenCalledWith('history', JSON.stringify(component.historyItems));
+    expect(localStorage.setItem).toHaveBeenCalledWith('icongener-history', JSON.stringify(mockItems));
   });
 
-  it('should add new item to history', () => {
+  it('should add item to history', () => {
     spyOn(localStorage, 'setItem');
-    const newItem = { id: '1', type: 'icon', name: 'New Icon', svg: '<svg>new</svg>', createdAt: Date.now() };
-    
-    component.addToHistory(newItem);
-    
-    expect(component.historyItems.length).toBe(1);
-    expect(component.historyItems[0]).toEqual(newItem);
+    const item: HistoryItem = { id: '1', type: 'icon', name: 'New Icon', preview: '', data: {}, timestamp: Date.now() };
+
+    component.addItem(item);
+    expect(component.historyItems().length).toBe(1);
+    expect(component.historyItems()[0]).toEqual(item);
     expect(localStorage.setItem).toHaveBeenCalled();
+  });
+
+  it('should remove item from history', () => {
+    spyOn(localStorage, 'setItem');
+    const item1: HistoryItem = { id: '1', type: 'icon', name: 'Icon 1', preview: '', data: {}, timestamp: Date.now() };
+    const item2: HistoryItem = { id: '2', type: 'favicon', name: 'Favicon 2', preview: '', data: {}, timestamp: Date.now() };
+    component.historyItems.set([item1, item2]);
+
+    component.removeItem('1');
+    expect(component.historyItems().length).toBe(1);
+    expect(component.historyItems()[0].id).toBe('2');
+    expect(toastServiceSpy.success).toHaveBeenCalledWith('Item removed from history');
+  });
+
+  it('should clear history when confirmed', () => {
+    spyOn(window, 'confirm').and.returnValue(true);
+    spyOn(localStorage, 'setItem');
+    component.historyItems.set([
+      { id: '1', type: 'icon', name: 'Icon 1', preview: '', data: {}, timestamp: Date.now() }
+    ]);
+
+    component.clearHistory();
+    expect(component.historyItems()).toEqual([]);
+    expect(toastServiceSpy.success).toHaveBeenCalledWith('History cleared');
+  });
+
+  it('should not clear history when cancelled', () => {
+    spyOn(window, 'confirm').and.returnValue(false);
+    component.historyItems.set([
+      { id: '1', type: 'icon', name: 'Icon 1', preview: '', data: {}, timestamp: Date.now() }
+    ]);
+
+    component.clearHistory();
+    expect(component.historyItems().length).toBe(1);
+  });
+
+  // ─── Filtering & Selection ────────────────────────────────────────
+
+  it('should filter items by type', () => {
+    const item1: HistoryItem = { id: '1', type: 'icon', name: 'Icon 1', preview: '', data: {}, timestamp: Date.now() };
+    const item2: HistoryItem = { id: '2', type: 'favicon', name: 'Favicon 1', preview: '', data: {}, timestamp: Date.now() };
+    component.historyItems.set([item1, item2]);
+
+    component.setType('icon');
+    expect(component.filteredItems()).toEqual([item1]);
+  });
+
+  it('should filter items by searchQuery', () => {
+    const item1: HistoryItem = { id: '1', type: 'icon', name: 'Apple Icon', preview: '', data: {}, timestamp: Date.now() };
+    const item2: HistoryItem = { id: '2', type: 'icon', name: 'Banana Icon', preview: '', data: {}, timestamp: Date.now() };
+    component.historyItems.set([item1, item2]);
+
+    component.searchQuery.set('Apple');
+    expect(component.filteredItems()).toEqual([item1]);
+  });
+
+  it('should select and close details of an item', () => {
+    const item: HistoryItem = { id: '1', type: 'icon', name: 'Test', preview: '', data: {}, timestamp: Date.now() };
+    component.selectItem(item);
+    expect(component.selectedItem()).toEqual(item);
+
+    component.closeDetails();
+    expect(component.selectedItem()).toBeNull();
+  });
+
+  // ─── Downloads ────────────────────────────────────────────────────
+
+  it('should download png-to-html item as html file', () => {
+    const item: HistoryItem = {
+      id: 'abc',
+      type: 'png-to-html',
+      name: 'HTML Image',
+      preview: '',
+      data: { htmlCode: '<div>code</div>' },
+      timestamp: Date.now()
+    };
+
+    component.downloadItem(item);
+    expect(downloadServiceSpy.downloadText).toHaveBeenCalledWith('<div>code</div>', 'generated-abc.html', 'text/html');
+    expect(toastServiceSpy.success).toHaveBeenCalledWith('HTML downloaded');
+  });
+
+  it('should download png item', () => {
+    const item: HistoryItem = {
+      id: '1',
+      type: 'icon',
+      name: 'My Icon',
+      preview: '',
+      data: { pngBase64: 'data:image/png;base64,abc' },
+      timestamp: Date.now()
+    };
+
+    component.downloadItem(item);
+    expect(downloadServiceSpy.downloadPng).toHaveBeenCalledWith('data:image/png;base64,abc', 'my-icon.png');
+    expect(toastServiceSpy.success).toHaveBeenCalledWith('Image downloaded');
+  });
+
+  it('should download svg item', () => {
+    const item: HistoryItem = {
+      id: '1',
+      type: 'icon',
+      name: 'My SVG Icon',
+      preview: '',
+      data: { svgCode: '<svg></svg>' },
+      timestamp: Date.now()
+    };
+
+    component.downloadItem(item);
+    expect(downloadServiceSpy.downloadSvg).toHaveBeenCalledWith('<svg></svg>', 'my-svg-icon.svg');
+    expect(toastServiceSpy.success).toHaveBeenCalledWith('SVG downloaded');
+  });
+
+  // ─── Helpers ──────────────────────────────────────────────────────
+
+  it('should return type label', () => {
+    component.language.set('en');
+    expect(component.getTypeLabel('icon')).toBe('Icons');
+    expect(component.getTypeLabel('favicon')).toBe('Favicons');
+  });
+
+  it('should format date timestamp', () => {
+    const ts = new Date('2025-05-10T10:00:00Z').getTime();
+    const formatted = component.formatDate(ts);
+    expect(formatted).toBeTruthy();
   });
 });

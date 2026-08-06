@@ -2,15 +2,16 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { LogoComponent } from '../logo/logo.component';
 import { RouterModule } from '@angular/router';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('SidebarComponent', () => {
   let component: SidebarComponent;
   let fixture: ComponentFixture<SidebarComponent>;
 
   beforeEach(async () => {
+    localStorage.clear();
     await TestBed.configureTestingModule({
-      imports: [RouterModule.forRoot([]), LogoComponent],
-      declarations: [SidebarComponent],
+      imports: [SidebarComponent, RouterModule.forRoot([]), LogoComponent, HttpClientTestingModule],
       providers: []
     }).compileComponents();
 
@@ -37,20 +38,18 @@ describe('SidebarComponent', () => {
   });
 
   it('should toggle category', () => {
-    const category = component.menuItems()[0];
-    component.toggleCategory(category.id);
-    expect(component.expandedCategories()).toContain(category.id);
-    
-    component.toggleCategory(category.id);
-    expect(component.expandedCategories()).not.toContain(category.id);
+    component.toggleCategory('tools');
+    expect(component.expandedCategories().has('tools')).toBeTrue();
+
+    component.toggleCategory('tools');
+    expect(component.expandedCategories().has('tools')).toBeFalse();
   });
 
   it('should check if category is expanded', () => {
-    const category = component.menuItems()[0];
-    expect(component.isCategoryExpanded(category.id)).toBe(false);
-    
-    component.toggleCategory(category.id);
-    expect(component.isCategoryExpanded(category.id)).toBe(true);
+    expect(component.isCategoryExpanded('tools')).toBe(false);
+
+    component.toggleCategory('tools');
+    expect(component.isCategoryExpanded('tools')).toBe(true);
   });
 
   it('should get icon for menu item', () => {

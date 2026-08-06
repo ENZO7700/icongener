@@ -100,8 +100,13 @@ describe('ToastService', () => {
 });
 
 describe('ToastContainerComponent', () => {
-  it('should be created', () => {
-    const component = new ToastContainerComponent();
-    expect(component).toBeTruthy();
+  it('should be created', async () => {
+    await TestBed.configureTestingModule({
+      imports: [ToastContainerComponent],
+      providers: [ToastService]
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(ToastContainerComponent);
+    expect(fixture.componentInstance).toBeTruthy();
   });
 });

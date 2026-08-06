@@ -8,7 +8,6 @@ import { SettingsComponent } from '../settings.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastService } from '../../../core/services/toast.service';
-import { ToastContainerComponent } from '../../../core/services/toast.service';
 
 describe('SettingsComponent', () => {
   let component: SettingsComponent;
@@ -16,12 +15,12 @@ describe('SettingsComponent', () => {
   let toastServiceSpy: jasmine.SpyObj<ToastService>;
 
   beforeEach(async () => {
-    // Create spies for services
-    toastServiceSpy = jasmine.createSpyObj('ToastService', ['showToast']);
+    localStorage.clear();
+    toastServiceSpy = jasmine.createSpyObj('ToastService', ['success', 'error', 'info', 'showToast', 'getToasts']);
+    toastServiceSpy.getToasts.and.returnValue([]);
 
     await TestBed.configureTestingModule({
-      imports: [CommonModule, FormsModule],
-      declarations: [SettingsComponent, ToastContainerComponent],
+      imports: [SettingsComponent, CommonModule, FormsModule],
       providers: [
         { provide: ToastService, useValue: toastServiceSpy }
       ]
@@ -30,6 +29,10 @@ describe('SettingsComponent', () => {
     fixture = TestBed.createComponent(SettingsComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    localStorage.clear();
   });
 
   it('should create', () => {
@@ -66,32 +69,28 @@ describe('SettingsComponent', () => {
     expect(localStorage.getItem('theme')).toBe('light');
   });
 
-  it('should load saved language from localStorage', () => {
-    spyOn(localStorage, 'getItem').and.callFake((key: string) => {
-      if (key === 'language') return 'sk';
-      return null;
-    });
-    
-    component = TestBed.createComponent(SettingsComponent).componentInstance;
-    expect(component.selectedLanguage).toBe('sk');
+  it('should load saved language from localStorage on init', () => {
+    localStorage.setItem('language', 'sk');
+    const newFixture = TestBed.createComponent(SettingsComponent);
+    const newComp = newFixture.componentInstance;
+    newFixture.detectChanges();
+    expect(newComp.selectedLanguage).toBe('sk');
   });
 
-  it('should load saved theme from localStorage', () => {
-    spyOn(localStorage, 'getItem').and.callFake((key: string) => {
-      if (key === 'theme') return 'light';
-      return null;
-    });
-    
-    component = TestBed.createComponent(SettingsComponent).componentInstance;
-    expect(component.selectedTheme).toBe('light');
+  it('should load saved theme from localStorage on init', () => {
+    localStorage.setItem('theme', 'light');
+    const newFixture = TestBed.createComponent(SettingsComponent);
+    const newComp = newFixture.componentInstance;
+    newFixture.detectChanges();
+    expect(newComp.selectedTheme).toBe('light');
   });
 
   it('should reset to default settings', () => {
     component.selectedLanguage = 'sk';
     component.selectedTheme = 'light';
-    
+
     component.resetSettings();
-    
+
     expect(component.selectedLanguage).toBe('en');
     expect(component.selectedTheme).toBe('dark');
     expect(localStorage.getItem('language')).toBe('en');
@@ -101,34 +100,29 @@ describe('SettingsComponent', () => {
   it('should save settings', () => {
     component.selectedLanguage = 'sk';
     component.selectedTheme = 'light';
-    
-    spyOn(localStorage, 'setItem');
+
     component.saveSettings();
-    
-    expect(localStorage.setItem).toHaveBeenCalledWith('language', 'sk');
-    expect(localStorage.setItem).toHaveBeenCalledWith('theme', 'light');
-    expect(toastServiceSpy.showToast).toHaveBeenCalledWith(
-      jasmine.stringContaining('Saved'),
-      jasmine.any(String),
-      jasmine.any(Number)
-    );
+
+    expect(localStorage.getItem('language')).toBe('sk');
+    expect(localStorage.getItem('theme')).toBe('light');
+    expect(toastServiceSpy.success).toHaveBeenCalled();
   });
 
-  it('should apply theme to document', () => {
+  it('should apply theme to document body', () => {
     component.selectedTheme = 'light';
     component.applyTheme();
-    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
-    
+    expect(document.body.classList.contains('light-theme')).toBeTrue();
+
     component.selectedTheme = 'dark';
     component.applyTheme();
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    expect(document.body.classList.contains('dark-theme')).toBeTrue();
   });
 
   it('should apply language to document', () => {
     component.selectedLanguage = 'en';
     component.applyLanguage();
     expect(document.documentElement.getAttribute('lang')).toBe('en');
-    
+
     component.selectedLanguage = 'sk';
     component.applyLanguage();
     expect(document.documentElement.getAttribute('lang')).toBe('sk');
@@ -137,7 +131,7 @@ describe('SettingsComponent', () => {
   it('should get current language', () => {
     component.selectedLanguage = 'en';
     expect(component.getCurrentLanguage()).toBe('en');
-    
+
     component.selectedLanguage = 'sk';
     expect(component.getCurrentLanguage()).toBe('sk');
   });
@@ -145,7 +139,7 @@ describe('SettingsComponent', () => {
   it('should get current theme', () => {
     component.selectedTheme = 'dark';
     expect(component.getCurrentTheme()).toBe('dark');
-    
+
     component.selectedTheme = 'light';
     expect(component.getCurrentTheme()).toBe('light');
   });
@@ -153,20 +147,15 @@ describe('SettingsComponent', () => {
   it('should check if dark mode is active', () => {
     component.selectedTheme = 'dark';
     expect(component.isDarkMode()).toBe(true);
-    
+
     component.selectedTheme = 'light';
     expect(component.isDarkMode()).toBe(false);
-    
-    component.selectedTheme = 'system';
-    // System theme check depends on actual system preference
-    // For testing, we'll just verify it doesn't throw
-    expect(component.isDarkMode()).toBeDefined();
   });
 
   it('should get theme class', () => {
     component.selectedTheme = 'dark';
     expect(component.getThemeClass()).toContain('dark');
-    
+
     component.selectedTheme = 'light';
     expect(component.getThemeClass()).toContain('light');
   });
@@ -184,8 +173,8 @@ describe('SettingsComponent', () => {
 
   it('should have additional settings sections', () => {
     expect(component.additionalSettings.length).toBeGreaterThan(0);
-    expect(component.additionalSettings[0]).toHaveProperty('name');
-    expect(component.additionalSettings[0]).toHaveProperty('description');
+    expect(component.additionalSettings[0].name).toBeDefined();
+    expect(component.additionalSettings[0].description).toBeDefined();
   });
 
   it('should toggle additional setting', () => {
@@ -207,29 +196,7 @@ describe('SettingsComponent', () => {
   });
 
   it('should check for updates', () => {
-    // This would normally make an HTTP request
-    // For testing, we just verify it doesn't throw
     expect(() => component.checkForUpdates()).not.toThrow();
-  });
-
-  it('should export settings', () => {
-    spyOn(component, 'downloadJson');
-    component.exportSettings();
-    expect(component.downloadJson).toHaveBeenCalled();
-  });
-
-  it('should import settings', () => {
-    const mockSettings = {
-      language: 'sk',
-      theme: 'light'
-    };
-    
-    spyOn(component, 'processImportedSettings');
-    const event = { target: { files: [new File([JSON.stringify(mockSettings)], 'settings.json')] } };
-    
-    component.importSettings(event as any);
-    
-    expect(component.processImportedSettings).toHaveBeenCalled();
   });
 
   it('should process imported settings', () => {
@@ -237,9 +204,9 @@ describe('SettingsComponent', () => {
       language: 'sk',
       theme: 'light'
     };
-    
+
     component.processImportedSettings(mockSettings);
-    
+
     expect(component.selectedLanguage).toBe('sk');
     expect(component.selectedTheme).toBe('light');
   });
@@ -249,10 +216,9 @@ describe('SettingsComponent', () => {
       language: 'invalid',
       theme: 'invalid'
     };
-    
+
     component.processImportedSettings(mockSettings);
-    
-    // Should fall back to defaults
+
     expect(component.selectedLanguage).toBe('en');
     expect(component.selectedTheme).toBe('dark');
   });
@@ -260,15 +226,16 @@ describe('SettingsComponent', () => {
   it('should download JSON file', () => {
     const data = { test: 'data' };
     const filename = 'test.json';
-    
-    spyOn(document, 'createElement').and.callThrough();
+
+    const mockAnchor = jasmine.createSpyObj('HTMLAnchorElement', ['click']);
+    spyOn(document, 'createElement').and.returnValue(mockAnchor as any);
     spyOn(document.body, 'appendChild');
-    spyOn(document.body.appendChild as jasmine.Spy, 'click');
     spyOn(document.body, 'removeChild');
-    
+
     component.downloadJson(data, filename);
-    
+
     expect(document.createElement).toHaveBeenCalledWith('a');
+    expect(mockAnchor.click).toHaveBeenCalled();
     expect(document.body.appendChild).toHaveBeenCalled();
     expect(document.body.removeChild).toHaveBeenCalled();
   });

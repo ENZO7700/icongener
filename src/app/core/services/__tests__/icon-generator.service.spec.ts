@@ -1,12 +1,23 @@
 import { TestBed } from '@angular/core/testing';
-import { IconGeneratorService, PLATFORMS, SHAPES } from '../icon-generator.service';
+import { IconGeneratorService } from '../icon-generator.service';
+import { AiService } from '../ai.service';
+import { DownloadService } from '../download.service';
 
 describe('IconGeneratorService', () => {
   let service: IconGeneratorService;
+  let aiServiceSpy: jasmine.SpyObj<AiService>;
+  let downloadServiceSpy: jasmine.SpyObj<DownloadService>;
 
   beforeEach(() => {
+    aiServiceSpy = jasmine.createSpyObj('AiService', ['generateSvg']);
+    downloadServiceSpy = jasmine.createSpyObj('DownloadService', ['downloadPng', 'downloadSvg', 'downloadZip', 'downloadText']);
+
     TestBed.configureTestingModule({
-      providers: [IconGeneratorService]
+      providers: [
+        IconGeneratorService,
+        { provide: AiService, useValue: aiServiceSpy },
+        { provide: DownloadService, useValue: downloadServiceSpy }
+      ]
     });
 
     service = TestBed.inject(IconGeneratorService);
@@ -16,71 +27,36 @@ describe('IconGeneratorService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should have all platforms defined', () => {
-    expect(PLATFORMS.length).toBeGreaterThan(0);
-    
-    const platformIds = PLATFORMS.map(p => p.id);
-    expect(platformIds).toContain('pwa');
-    expect(platformIds).toContain('android');
-    expect(platformIds).toContain('ios');
-  });
-
-  it('should have all shapes defined', () => {
-    expect(SHAPES.length).toBeGreaterThan(0);
-    
-    const shapeIds = SHAPES.map(s => s.id);
-    expect(shapeIds).toContain('circle');
-    expect(shapeIds).toContain('square');
-    expect(shapeIds).toContain('rounded');
-  });
-
-  it('should get platform by ID', () => {
-    const pwaPlatform = service.getPlatform('pwa');
-    expect(pwaPlatform).toBeTruthy();
-    expect(pwaPlatform?.id).toBe('pwa');
+  it('should get platform by id', () => {
+    const platform = service.getPlatform('pwa');
+    expect(platform).toBeTruthy();
+    expect(platform?.id).toBe('pwa');
   });
 
   it('should return undefined for unknown platform', () => {
-    const unknownPlatform = service.getPlatform('unknown');
-    expect(unknownPlatform).toBeUndefined();
+    const platform = service.getPlatform('unknown');
+    expect(platform).toBeUndefined();
   });
 
-  it('should get shape by ID', () => {
-    const circleShape = service.getShape('circle');
-    expect(circleShape).toBeTruthy();
-    expect(circleShape?.id).toBe('circle');
+  it('should get shape by id', () => {
+    const shape = service.getShape('circle');
+    expect(shape).toBeTruthy();
+    expect(shape?.id).toBe('circle');
   });
 
   it('should return undefined for unknown shape', () => {
-    const unknownShape = service.getShape('unknown');
-    expect(unknownShape).toBeUndefined();
-  });
-
-  it('should clean SVG code', () => {
-    const dirtySvg = 'Some text <svg>clean</svg> more text';
-    const cleaned = service.cleanSvgCode(dirtySvg);
-    expect(cleaned).toBe('<svg>clean</svg>');
-  });
-
-  it('should handle null SVG code', () => {
-    const cleaned = service.cleanSvgCode(null);
-    expect(cleaned).toBe('');
-  });
-
-  it('should handle undefined SVG code', () => {
-    const cleaned = service.cleanSvgCode(undefined);
-    expect(cleaned).toBe('');
+    const shape = service.getShape('unknown' as any);
+    expect(shape).toBeUndefined();
   });
 
   it('should generate fallback SVG', () => {
-    const fallbackSvg = service.getFallbackSvg('#00d4ff', '#ffffff');
+    const fallbackSvg = (service as any).getFallbackSvg('rounded', '#00d4ff', '#ffffff', '#1a1a2e');
     expect(fallbackSvg).toContain('<svg');
     expect(fallbackSvg).toContain('#00d4ff');
-    expect(fallbackSvg).toContain('#ffffff');
   });
 
   it('should get all platform IDs', () => {
-    const platformIds = service.getAllPlatformIds();
+    const platformIds = service.platforms.map(p => p.id);
     expect(platformIds.length).toBeGreaterThan(0);
     expect(platformIds).toContain('pwa');
     expect(platformIds).toContain('android');
@@ -88,7 +64,7 @@ describe('IconGeneratorService', () => {
   });
 
   it('should get all shape IDs', () => {
-    const shapeIds = service.getAllShapeIds();
+    const shapeIds = service.shapes.map(s => s.id);
     expect(shapeIds.length).toBeGreaterThan(0);
     expect(shapeIds).toContain('circle');
     expect(shapeIds).toContain('square');

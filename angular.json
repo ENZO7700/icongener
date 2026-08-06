@@ -72,6 +72,10 @@
                 "input": "src"
               }
             ],
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ],
             "styles": [
               "src/styles.css"
             ],

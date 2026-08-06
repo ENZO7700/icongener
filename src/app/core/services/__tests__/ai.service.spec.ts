@@ -39,18 +39,18 @@ describe('AiService', () => {
     req.flush(mockResponse);
   });
 
-  it('should clean SVG code by removing extra text', () => {
-    const dirtySvg = 'Here is your SVG: <svg>clean</svg> Some more text';
+  it('should clean SVG code by removing markdown blocks', () => {
+    const dirtySvg = '```svg\n<svg>clean</svg>\n```';
     const cleaned = service.cleanSvgCode(dirtySvg);
     expect(cleaned).toBe('<svg>clean</svg>');
   });
 
-  it('should handle empty SVG response', (done) => {
+  it('should handle empty SVG response by throwing error', (done) => {
     const testPrompt = 'Generate an icon';
     const mockResponse = { svgCode: '' };
 
-    service.generateSvg(testPrompt).then(svgCode => {
-      expect(svgCode).toBe('');
+    service.generateSvg(testPrompt).catch(error => {
+      expect(error.message).toContain('No SVG code returned');
       done();
     });
 
@@ -62,7 +62,7 @@ describe('AiService', () => {
     const testPrompt = 'Enhance this description';
     const mockResponse = { enhancedDescription: 'Enhanced description' };
 
-    service.enhancePreset(testPrompt).then(description => {
+    service.enhanceDescription(testPrompt).then((description: string) => {
       expect(description).toBe('Enhanced description');
       done();
     });

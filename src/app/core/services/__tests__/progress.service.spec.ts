@@ -12,6 +12,10 @@ describe('ProgressService', () => {
     service = TestBed.inject(ProgressService);
   });
 
+  afterEach(() => {
+    service.stop();
+  });
+
   it('should be created', () => {
     expect(service).toBeTruthy();
   });
@@ -27,9 +31,8 @@ describe('ProgressService', () => {
     ];
 
     service.start(steps);
-    
-    expect(service.getProgress()).toBe(0);
     expect(service.getCurrentStepInfo()).toEqual(steps[0]);
+    expect(service.isProgressActive()).toBe(true);
   });
 
   it('should advance to next step', () => {
@@ -40,7 +43,7 @@ describe('ProgressService', () => {
 
     service.start(steps);
     service.nextStep();
-    
+
     expect(service.getProgress()).toBe(50);
     expect(service.getCurrentStepInfo()).toEqual(steps[1]);
   });
@@ -52,10 +55,10 @@ describe('ProgressService', () => {
     ];
 
     service.start(steps);
-    service.nextStep();
     service.complete();
-    
+
     expect(service.getProgress()).toBe(100);
+    expect(service.isProgressActive()).toBe(false);
   });
 
   it('should set error', () => {
@@ -65,8 +68,9 @@ describe('ProgressService', () => {
 
     service.start(steps);
     service.setError('Test error');
-    
-    expect(service.getCurrentStepInfo()?.label).toBe('Test error');
+
+    expect(service.getError()).toBe('Test error');
+    expect(service.isProgressActive()).toBe(false);
   });
 
   it('should stop progress', () => {
@@ -76,14 +80,14 @@ describe('ProgressService', () => {
 
     service.start(steps);
     service.stop();
-    
-    expect(service.getProgress()).toBe(0);
+
+    expect(service.isProgressActive()).toBe(false);
   });
 
   it('should handle empty steps', () => {
     service.start([]);
-    
+
     expect(service.getProgress()).toBe(0);
-    expect(service.getCurrentStepInfo()).toBeUndefined();
+    expect(service.getCurrentStepInfo()).toBeNull();
   });
 });

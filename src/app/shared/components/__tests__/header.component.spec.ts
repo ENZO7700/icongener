@@ -8,8 +8,7 @@ describe('HeaderComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RouterModule.forRoot([])],
-      declarations: [HeaderComponent],
+      imports: [HeaderComponent, RouterModule.forRoot([])],
       providers: []
     }).compileComponents();
 

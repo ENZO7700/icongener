@@ -3,15 +3,16 @@ import { MainLayoutComponent } from '../main-layout/main-layout.component';
 import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
 import { HeaderComponent } from '../../shared/components/header/header.component';
 import { RouterOutlet, RouterModule } from '@angular/router';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('MainLayoutComponent', () => {
   let component: MainLayoutComponent;
   let fixture: ComponentFixture<MainLayoutComponent>;
 
   beforeEach(async () => {
+    localStorage.clear();
     await TestBed.configureTestingModule({
-      imports: [RouterModule.forRoot([])],
-      declarations: [MainLayoutComponent],
+      imports: [MainLayoutComponent, RouterModule.forRoot([]), HttpClientTestingModule],
       providers: []
     }).compileComponents();
 
@@ -54,12 +55,12 @@ describe('MainLayoutComponent', () => {
   });
 
   it('should get content padding class', () => {
-    const paddingClass = component.getContentPadding();
-    expect(paddingClass).toContain('pl-');
+    const padding = component.getContentPadding();
+    expect(padding).toBe('64px');
   });
 
   it('should get sidebar width class', () => {
-    const widthClass = component.getSidebarWidth();
-    expect(widthClass).toContain('w-');
+    const width = component.getSidebarWidth();
+    expect(width).toBe('280px');
   });
 });

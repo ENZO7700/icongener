@@ -259,28 +259,27 @@ export class FaviconGeneratorComponent implements OnInit {
         type: 'image/png'
       }));
       
-      // Add SVG file for modern type
-      if (this.faviconType() === 'modern' && this.generatedFavicons().length > 0) {
-        files.push({
-          name: 'favicon.svg',
-          content: this.generatedFavicons()[0].svgCode,
-          type: 'image/svg+xml'
-        });
-      }
-      
-      // Add ICO file for classic type
-      if (this.faviconType() === 'classic') {
-        // For simplicity, we'll just include the PNG files
-        // In a real app, you would create an actual ICO file
-        files.push({
-          name: 'favicon.ico',
-          content: this.generatedFavicons()[0].pngBase64, // Using largest as ICO
-          type: 'image/x-icon'
-        });
-      }
+      // Add site.webmanifest
+      const webmanifestContent = JSON.stringify({
+        name: this.description() || 'App',
+        short_name: 'App',
+        icons: [
+          { src: 'favicon-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'favicon-512x512.png', sizes: '512x512', type: 'image/png' }
+        ],
+        theme_color: this.primaryColor(),
+        background_color: this.backgroundColor() === 'transparent' ? '#ffffff' : this.backgroundColor(),
+        display: 'standalone'
+      }, null, 2);
+
+      files.push({
+        name: 'site.webmanifest',
+        content: webmanifestContent,
+        type: 'application/json'
+      });
       
       await this.downloadService.downloadZip(files);
-      this.toastService.success('All favicons downloaded!');
+      this.toastService.success('Complete Favicon Suite & webmanifest downloaded!');
     } catch (error) {
       console.error('Error downloading favicons:', error);
       this.toastService.error('Failed to download favicons');

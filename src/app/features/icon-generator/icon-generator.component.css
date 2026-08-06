@@ -179,6 +179,7 @@
 /* Shape Selector */
 .shape-selector {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
 }
 
@@ -195,6 +196,8 @@
   cursor: pointer;
   transition: all 0.2s;
   font-size: 0.875rem;
+  flex: 1;
+  min-width: 80px;
 }
 
 .shape-selector button:hover:not([disabled]) {
@@ -215,10 +218,10 @@
 }
 
 .shape-preview {
-  width: 40px;
-  height: 40px;
-  background: rgba(0, 212, 255, 0.2);
-  border-radius: 8px;
+  width: 24px;
+  height: 24px;
+  background: currentColor;
+  opacity: 0.8;
 }
 
 .shape-name {
@@ -609,7 +612,9 @@
   }
   
   .shape-selector {
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
   }
   
   .shape-selector button {

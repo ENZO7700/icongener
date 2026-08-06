@@ -6,6 +6,14 @@
     (toggle)="toggleSidebar()"
   ></app-sidebar>
 
+  <!-- Mobile Backdrop Overlay -->
+  <div 
+    class="sidebar-backdrop" 
+    *ngIf="isSidebarOpen() && isMobile()" 
+    (click)="closeSidebarMobile()"
+    aria-hidden="true"
+  ></div>
+
   <!-- Header -->
   <app-header 
     [language]="language()"
@@ -20,3 +28,4 @@
     </div>
   </main>
 </div>
+

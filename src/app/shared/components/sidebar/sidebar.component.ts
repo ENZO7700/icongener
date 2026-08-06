@@ -4,6 +4,8 @@ import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { LogoComponent } from '../logo/logo.component';
 import { MENU_ITEMS, ICONS, MenuCategory, MenuItem } from '../../models/menu.model';
 
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+
 @Component({
   selector: 'app-sidebar',
   standalone: true,
@@ -29,6 +31,7 @@ export class SidebarComponent implements OnInit {
   // Injected services
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private sanitizer = inject(DomSanitizer);
 
   constructor() {}
 
@@ -71,8 +74,14 @@ export class SidebarComponent implements OnInit {
            this.currentPath().startsWith(item.route + '/');
   }
   
-  getIcon(iconKey: string): string {
-    return this.icons[iconKey] || this.icons['dashboard'];
+  private iconCache = new Map<string, SafeHtml>();
+
+  getIcon(iconKey: string): SafeHtml {
+    if (!this.iconCache.has(iconKey)) {
+      const rawSvg = this.icons[iconKey] || this.icons['dashboard'];
+      this.iconCache.set(iconKey, this.sanitizer.bypassSecurityTrustHtml(rawSvg));
+    }
+    return this.iconCache.get(iconKey)!;
   }
   
   getPath(item: MenuItem): string {

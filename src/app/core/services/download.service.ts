@@ -1,8 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-
-// Declare JSZip for TypeScript
-declare var JSZip: any;
+import JSZip from 'jszip';
 
 @Injectable({
   providedIn: 'root'
@@ -40,12 +38,6 @@ export class DownloadService {
    * Download multiple files as a ZIP
    */
   async downloadZip(files: { name: string; content: string | Blob; type?: string }[]): Promise<void> {
-    // Check if JSZip is available
-    if (typeof JSZip === 'undefined') {
-      console.error('JSZip is not available. Please include it in your project.');
-      return;
-    }
-    
     const zip = new JSZip();
     
     for (const file of files) {

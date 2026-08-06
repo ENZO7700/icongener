@@ -82,6 +82,10 @@ export class LogoComponent implements OnInit {
   getSizeClass(): string {
     return this.size();
   }
+
+  getLogoSizeClass(): string {
+    return `w-${this.size()}`;
+  }
   
   getTitleSizeClass(): string {
     switch (this.size()) {
@@ -91,4 +95,13 @@ export class LogoComponent implements OnInit {
       default: return 'text-base';
     }
   }
+
+  getLogoTitle(): string {
+    return 'IconGener';
+  }
+
+  getFallbackSvg(): string {
+    return this.getFallbackLogo();
+  }
 }
+

@@ -244,12 +244,14 @@ body.body-scroll-lock {
 /* Slider */
 input[type="range"] {
   -webkit-appearance: none;
+  appearance: none;
   height: 44px;
   background: transparent;
   padding: 0 16px;
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
+  appearance: none;
   width: 28px;
   height: 28px;
   border-radius: 50%;

@@ -443,20 +443,25 @@
 
 .html-preview {
   width: 100%;
-  max-width: 800px;
+  max-width: 100%;
   margin: 0 auto 20px auto;
   background: #0f172a;
   border-radius: 12px;
-  padding: 20px;
-  overflow: auto;
+  overflow: hidden;
   min-height: 200px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.html-preview div {
-  background: #0f172a;
+.preview-iframe {
+  width: 100%;
+  min-height: 400px;
+  height: 60vh;
+  max-height: 800px;
+  border: none;
+  background: #fff;
+  border-radius: 12px;
 }
 
 /* Stats */

@@ -235,7 +235,12 @@
       <div class="preview-section">
         <h2 class="section-title">{{ translate('preview') }}</h2>
         <div class="html-preview">
-          <div [innerHTML]="safeHtmlCode()"></div>
+          <iframe
+            [attr.srcdoc]="previewIframeSrc()"
+            sandbox
+            class="preview-iframe"
+            frameborder="0"
+          ></iframe>
         </div>
         
         <!-- Stats -->

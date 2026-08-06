@@ -1,4 +1,4 @@
-import { Component, signal, OnInit, inject, computed, ElementRef, ViewChild } from '@angular/core';
+import { Component, signal, OnInit, inject, computed, ElementRef, ViewChild, SecurityContext } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -25,6 +25,7 @@ export interface GeneratedHtml {
   id: string;
   htmlCode: string;
   cssCode: string;
+  previewHtmlCode: string;
   pixelData: PixelData[];
   rectangles: Rectangle[];
   width: number;
@@ -32,7 +33,7 @@ export interface GeneratedHtml {
   timestamp: number;
 }
 
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { DomSanitizer } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-png-to-html',
@@ -81,9 +82,8 @@ export class PngToHtmlComponent implements OnInit {
   private toastService = inject(ToastService);
   private sanitizer = inject(DomSanitizer);
   
-  safeHtmlCode = computed<SafeHtml>(() => {
-    const code = this.generatedHtml()?.htmlCode;
-    return code ? this.sanitizer.bypassSecurityTrustHtml(code) : '';
+  previewIframeSrc = computed<string>(() => {
+    return this.generatedHtml()?.previewHtmlCode || '';
   });
 
   constructor() {}
@@ -301,7 +301,7 @@ export class PngToHtmlComponent implements OnInit {
       const cropWidth = this.cropWidth();
       const cropHeight = this.cropHeight();
       
-      // Create canvas for cropped image
+      // Create canvas for cropped image (full quality)
       const canvas = document.createElement('canvas');
       canvas.width = cropWidth;
       canvas.height = cropHeight;
@@ -311,26 +311,46 @@ export class PngToHtmlComponent implements OnInit {
         throw new Error('Could not get 2D canvas context');
       }
       
-      // Draw cropped image
+      // Draw cropped image at full resolution
       ctx.drawImage(img, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
       
-      // Get image data
+      // Get full-quality image data
       const imageData = ctx.getImageData(0, 0, cropWidth, cropHeight);
       
-      // Quantize colors
+      // Quantize colors (full quality)
       const pixelData = this.quantizeImage(imageData, this.colorQuantization());
       
-      // Apply RLE optimization to reduce file size
+      // Apply RLE optimization (full quality)
       const rectangles = this.applyRLE(pixelData, cropWidth, cropHeight);
       
-      // Generate HTML and CSS using optimized rectangles
-      const htmlCode = this.generateHtmlCode(rectangles, cropWidth, cropHeight);
+      // Generate full-quality HTML with contenteditable for editable download
+      const htmlCode = this.generateHtmlCode(rectangles, cropWidth, cropHeight, true);
       const cssCode = this.generateCssCode(rectangles);
+      
+      // Generate downsampled preview (max 1280x960 for fast iframe rendering)
+      const previewDims = this.getPreviewDimensions(cropWidth, cropHeight);
+      let previewHtmlCode: string;
+      
+      if (previewDims.scale < 1) {
+        // Downsample the canvas for a lightweight preview
+        const previewCanvas = document.createElement('canvas');
+        previewCanvas.width = previewDims.width;
+        previewCanvas.height = previewDims.height;
+        const previewCtx = previewCanvas.getContext('2d')!;
+        previewCtx.drawImage(canvas, 0, 0, previewDims.width, previewDims.height);
+        const previewImageData = previewCtx.getImageData(0, 0, previewDims.width, previewDims.height);
+        const previewPixelData = this.quantizeImage(previewImageData, this.colorQuantization());
+        const previewRectangles = this.applyRLE(previewPixelData, previewDims.width, previewDims.height);
+        previewHtmlCode = this.generateHtmlCode(previewRectangles, previewDims.width, previewDims.height, false);
+      } else {
+        previewHtmlCode = this.generateHtmlCode(rectangles, cropWidth, cropHeight, false);
+      }
       
       const result: GeneratedHtml = {
         id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         htmlCode,
         cssCode,
+        previewHtmlCode,
         pixelData,
         rectangles,
         width: cropWidth,
@@ -483,6 +503,23 @@ export class PngToHtmlComponent implements OnInit {
     
     return rectangles;
   }
+  // Calculate downsampled preview dimensions (max 1280x960, preserve aspect ratio)
+  private getPreviewDimensions(width: number, height: number): { width: number; height: number; scale: number } {
+    const MAX_W = 1280;
+    const MAX_H = 960;
+    
+    if (width <= MAX_W && height <= MAX_H) {
+      return { width, height, scale: 1 };
+    }
+    
+    const scale = Math.min(MAX_W / width, MAX_H / height);
+    return {
+      width: Math.round(width * scale),
+      height: Math.round(height * scale),
+      scale
+    };
+  }
+
   // Convert rgba color string to shortest possible CSS color
   private rgbaToHex(color: string): string {
     const match = color.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/);
@@ -525,7 +562,7 @@ export class PngToHtmlComponent implements OnInit {
   }
 
   // Generate HTML code (optimized: CSS classes, hex colors, short names)
-  private generateHtmlCode(rectangles: Rectangle[], width: number, height: number): string {
+  private generateHtmlCode(rectangles: Rectangle[], width: number, height: number, editable: boolean = false): string {
     const pixelSize = this.pixelSize();
     const includeComments = this.includeComments();
     const colorMap = this.buildColorClassMap(rectangles);
@@ -552,7 +589,7 @@ export class PngToHtmlComponent implements OnInit {
       html += `  <!-- ${width}x${height}px, ${pixelSize}px/block, ${rectangles.length} rects -->\n`;
     }
 
-    html += `  <div class="ic" style="width:${width * pixelSize}px;height:${height * pixelSize}px">\n`;
+    html += `  <div class="ic" style="width:${width * pixelSize}px;height:${height * pixelSize}px"${editable ? ' contenteditable="true"' : ''}>\n`;
 
     // Generate divs with short class names and minimal inline positioning
     for (const rect of rectangles) {

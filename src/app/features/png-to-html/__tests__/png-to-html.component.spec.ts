@@ -387,6 +387,7 @@ describe('PngToHtmlComponent', () => {
       id: 'test',
       htmlCode: '<div>test</div>',
       cssCode: '.p{}',
+      previewHtmlCode: '<div>preview</div>',
       pixelData: [],
       rectangles: [],
       width: 10,
@@ -408,6 +409,7 @@ describe('PngToHtmlComponent', () => {
       id: 'test',
       htmlCode: '<div>test</div>',
       cssCode: '.p{position:absolute}',
+      previewHtmlCode: '<div>preview</div>',
       pixelData: [],
       rectangles: [],
       width: 10,
@@ -439,6 +441,7 @@ describe('PngToHtmlComponent', () => {
       id: 'test',
       htmlCode: '',
       cssCode: '',
+      previewHtmlCode: '',
       pixelData: [
         { x: 0, y: 0, color: 'red' },
         { x: 1, y: 0, color: 'blue' },
@@ -474,5 +477,70 @@ describe('PngToHtmlComponent', () => {
   it('should toggle includeComments signal', () => {
     component.includeComments.set(false);
     expect(component.includeComments()).toBe(false);
+  });
+
+  // ─── Preview Iframe / Sandbox ────────────────────────────────────
+
+  it('should return empty string for previewIframeSrc when no generation', () => {
+    expect(component.previewIframeSrc()).toBe('');
+  });
+
+  it('should return previewHtmlCode from previewIframeSrc', () => {
+    component.generatedHtml.set({
+      id: 'test',
+      htmlCode: '<div>full</div>',
+      cssCode: '',
+      previewHtmlCode: '<div>preview</div>',
+      pixelData: [],
+      rectangles: [],
+      width: 10,
+      height: 10,
+      timestamp: Date.now()
+    });
+
+    expect(component.previewIframeSrc()).toBe('<div>preview</div>');
+  });
+
+  // ─── Preview Dimensions ──────────────────────────────────────────
+
+  it('should return same dimensions if within preview limits', () => {
+    const dims = (component as any).getPreviewDimensions(800, 600);
+    expect(dims.width).toBe(800);
+    expect(dims.height).toBe(600);
+    expect(dims.scale).toBe(1);
+  });
+
+  it('should downscale wide images to max 1280 width', () => {
+    const dims = (component as any).getPreviewDimensions(2560, 960);
+    expect(dims.width).toBe(1280);
+    expect(dims.height).toBe(480);
+    expect(dims.scale).toBe(0.5);
+  });
+
+  it('should downscale tall images to max 960 height', () => {
+    const dims = (component as any).getPreviewDimensions(640, 1920);
+    expect(dims.width).toBe(320);
+    expect(dims.height).toBe(960);
+    expect(dims.scale).toBe(0.5);
+  });
+
+  // ─── Contenteditable in Download HTML ────────────────────────────
+
+  it('should add contenteditable to HTML when editable=true', () => {
+    const rects = [{ x: 0, y: 0, width: 1, height: 1, color: 'rgba(0, 0, 0, 1.00)' }];
+    component.pixelSize.set(10);
+    component.includeComments.set(false);
+
+    const html = (component as any).generateHtmlCode(rects, 1, 1, true);
+    expect(html).toContain('contenteditable="true"');
+  });
+
+  it('should NOT add contenteditable when editable=false', () => {
+    const rects = [{ x: 0, y: 0, width: 1, height: 1, color: 'rgba(0, 0, 0, 1.00)' }];
+    component.pixelSize.set(10);
+    component.includeComments.set(false);
+
+    const html = (component as any).generateHtmlCode(rects, 1, 1, false);
+    expect(html).not.toContain('contenteditable');
   });
 });

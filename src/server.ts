@@ -81,6 +81,15 @@ function generateSmartSvg(prompt: string, primaryColor: string, secondaryColor: 
 
   const wrapSvg = (inner: string) => `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+      <defs>
+        <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="${primaryColor}" />
+          <stop offset="100%" stop-color="${secondaryColor}" stop-opacity="0.8" />
+        </linearGradient>
+        <filter id="dropGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="${primaryColor}" flood-opacity="0.35" />
+        </filter>
+      </defs>
       ${inner}
     </svg>
   `.trim();

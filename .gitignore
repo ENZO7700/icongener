@@ -110,3 +110,8 @@ pnpm-lock.yaml
 *.spec.js
 !*.spec.ts
 .vercel
+
+# Archives & Temporary files
+*.zip
+**/temp/
+

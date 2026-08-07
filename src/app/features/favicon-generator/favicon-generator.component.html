@@ -77,8 +77,8 @@
             <div class="color-input">
               <input 
                 type="color"
-                [ngModel]="primaryColor()"
-                (ngModelChange)="primaryColor.set($event)"
+                [value]="primaryColor()"
+                (input)="primaryColor.set($any($event.target).value)"
                 [disabled]="isGenerating()"
               >
               <span class="color-value">{{ primaryColor() }}</span>
@@ -89,8 +89,8 @@
             <div class="color-input">
               <input 
                 type="color"
-                [ngModel]="secondaryColor()"
-                (ngModelChange)="secondaryColor.set($event)"
+                [value]="secondaryColor()"
+                (input)="secondaryColor.set($any($event.target).value)"
                 [disabled]="isGenerating()"
               >
               <span class="color-value">{{ secondaryColor() }}</span>
